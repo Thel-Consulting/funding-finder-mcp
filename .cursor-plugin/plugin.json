@@ -6,7 +6,7 @@
   "author": {
     "name": "Thel Consulting"
   },
-  "homepage": "https://github.com/Thel-Consulting/funding-finder-mcp",
+  "homepage": "https://federal-funding-finder.netlify.app",
   "repository": "https://github.com/Thel-Consulting/funding-finder-mcp",
   "license": "MIT",
   "keywords": [
@@ -19,5 +19,6 @@
     "funding",
     "mcp"
   ],
-  "logo": "assets/logo.svg"
+  "logo": "assets/logo.svg",
+  "mcpServers": "mcp.json"
 }

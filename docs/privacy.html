@@ -28,7 +28,7 @@
         <tbody>
           <tr><td>Accounts, names, emails</td><td>None collected</td><td>None</td></tr>
           <tr><td>Your queries</td><td>Not logged. Public upstream responses are cached in Netlify Blobs under a SHA-256 hash of the upstream request.</td><td>Treated as expired after 30 to 60 minutes and deleted on the next read</td></tr>
-          <tr><td>IP address</td><td>A salted hash, held only in function memory for rate limiting. The raw IP is not stored or logged.</td><td>Counter resets every 60 seconds</td></tr>
+          <tr><td>IP address</td><td>Counted by Netlify's edge rate limiter (per IP, 60 requests per minute) and, as a salted hash, in function memory. This server does not store or log the raw IP.</td><td>Counters reset every 60 seconds</td></tr>
           <tr><td>Logs</td><td>Tool name, success or failure, and duration. No query text, no IPs.</td><td>Netlify function log retention</td></tr>
         </tbody>
       </table>

@@ -16,6 +16,16 @@ import { NSF_DOCS_URL, searchNsf, type NsfAward } from "./sources/nsf.js";
 import { extractKeywords, similarity } from "./keywords.js";
 import { summarizeNih, summarizeNsf } from "./summary.js";
 
+// Unknown keys are an error, not silently dropped, so a guessed name like
+// "state" instead of "org_states" cannot widen a search to the whole country.
+function strict<T extends z.ZodRawShape>(shape: T) {
+  const valid = Object.keys(shape).join(", ");
+  return z.strictObject(shape, {
+    error: (iss) =>
+      iss.code === "unrecognized_keys" ? `Unknown parameter(s): ${iss.keys.join(", ")}. Valid parameters: ${valid}.` : undefined,
+  });
+}
+
 const READ_ONLY = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true } as const;
 
 const stateCode = z
@@ -73,7 +83,7 @@ export function registerTools(server: McpServer, cache?: Cache) {
       description:
         "Read-only. Searches forecasted and posted funding opportunities on Grants.gov (search2 API). " +
         "Use it to find open SBIR/STTR solicitations and other grants. Every result links to its Grants.gov page.",
-      inputSchema: {
+      inputSchema: strict({
         keyword: z.string().max(200).optional().describe("Free text, for example 'SBIR' or 'wound care'"),
         agency: z
           .string()
@@ -87,7 +97,7 @@ export function registerTools(server: McpServer, cache?: Cache) {
         status: z.array(z.enum(["forecasted", "posted"])).optional().describe("Defaults to both forecasted and posted"),
         rows: z.number().int().min(1).max(100).default(10),
         offset: z.number().int().min(0).default(0),
-      },
+      }),
       annotations: { title: "Search open opportunities", ...READ_ONLY },
     },
     async (input) =>
@@ -109,7 +119,7 @@ export function registerTools(server: McpServer, cache?: Cache) {
       description:
         "Read-only. Searches funded NIH projects in NIH RePORTER v2. Defaults to SBIR/STTR activity codes R43, R44, R41, R42. " +
         "Each row is one project in one fiscal year, so a multi-year project can appear more than once. Every result links to RePORTER.",
-      inputSchema: {
+      inputSchema: strict({
         text: z.string().max(500).optional().describe("Words to match in title, abstract and terms"),
         text_operator: z.enum(["and", "or"]).default("and"),
         activity_codes: z
@@ -124,7 +134,7 @@ export function registerTools(server: McpServer, cache?: Cache) {
         limit: z.number().int().min(1).max(50).default(10),
         offset: z.number().int().min(0).max(14999).default(0),
         include_abstract: z.boolean().default(false),
-      },
+      }),
       annotations: { title: "Search NIH awards", ...READ_ONLY },
     },
     async (input) =>
@@ -162,7 +172,7 @@ export function registerTools(server: McpServer, cache?: Cache) {
       description:
         "Read-only. Searches NSF awards through the NSF Award Search API on Research.gov. Defaults to SBIR/STTR awards " +
         "(fundProgramName 'SBIR OR STTR'). Multi-word keywords are ORed by NSF; use AND between words to require all. Every result links to NSF.",
-      inputSchema: {
+      inputSchema: strict({
         keyword: z.string().max(300).optional().describe("Free text; supports AND, OR, NOT and quoted phrases"),
         state: stateCode.optional().describe("Awardee state, for example SD"),
         award_date_from: isoDate.optional().describe("Earliest award date, YYYY-MM-DD"),
@@ -171,7 +181,7 @@ export function registerTools(server: McpServer, cache?: Cache) {
         rows: z.number().int().min(1).max(25).default(10),
         offset: z.number().int().min(0).max(2999).default(0),
         include_abstract: z.boolean().default(false),
-      },
+      }),
       annotations: { title: "Search NSF awards", ...READ_ONLY },
     },
     async (input) =>
@@ -209,13 +219,13 @@ export function registerTools(server: McpServer, cache?: Cache) {
       description:
         "Read-only. Given a project description or keywords, extracts key terms, searches NIH RePORTER and NSF Award Search, " +
         "and ranks funded projects by term overlap with your description. Scores are a simple keyword overlap, not a semantic judgment.",
-      inputSchema: {
+      inputSchema: strict({
         description: z.string().min(3).max(4000).describe("Project description or keywords"),
         sources: z.array(z.enum(["nih", "nsf"])).min(1).default(["nih", "nsf"]),
         sbir_sttr_only: z.boolean().default(false).describe("Limit to SBIR/STTR awards"),
         fiscal_year_from: year.optional().describe("NIH fiscal year and NSF award year lower bound"),
         limit: z.number().int().min(1).max(25).default(10),
-      },
+      }),
       annotations: { title: "Similar funded projects", ...READ_ONLY },
     },
     async (input) =>
@@ -304,13 +314,13 @@ export function registerTools(server: McpServer, cache?: Cache) {
         "Read-only. Aggregates SBIR/STTR award counts and dollar totals by fiscal year (and by state when no state is given) " +
         "from NIH RePORTER (activity codes R43, R44, R41, R42) or NSF Award Search (fundProgramName SBIR OR STTR). " +
         "Finishes within about 7 seconds: pulls at most 2,000 NIH records or 600 NSF awards and marks the result partial, with a note, when the upstream total is larger.",
-      inputSchema: {
+      inputSchema: strict({
         agency: z.enum(["NIH", "NSF"]),
         state: stateCode.optional(),
         fiscal_year_from: year.optional().describe("Defaults to five years before the current fiscal year"),
         fiscal_year_to: year.optional().describe("Defaults to the current fiscal year"),
         keyword: z.string().max(200).optional(),
-      },
+      }),
       annotations: { title: "Agency SBIR summary", ...READ_ONLY },
     },
     async (input) =>

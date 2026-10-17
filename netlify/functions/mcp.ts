@@ -23,4 +23,9 @@ export default async (request: Request, context: Context) =>
     perMinute: Number(process.env.RATE_LIMIT_PER_MINUTE ?? "60") || 60,
   });
 
-export const config: Config = { path: "/mcp" };
+// Netlify's edge rate limit (per IP, all plans) is the real limit, since function
+// instances do not share memory. The in-function limiter stays as a backstop.
+export const config: Config = {
+  path: "/mcp",
+  rateLimit: { windowLimit: 60, windowSize: 60, aggregateBy: ["ip", "domain"] },
+};

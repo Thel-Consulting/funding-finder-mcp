@@ -40,15 +40,17 @@ Notes on the data:
 
 ## Connect
 
-Hosted endpoint (not deployed yet; the URL is a placeholder, and a `https://<site-name>.netlify.app/mcp` URL works once a Netlify site exists):
+Hosted endpoint on Netlify:
 
 ```json
 {
   "mcpServers": {
-    "funding-finder": { "url": "https://<subdomain>.thelconsulting.com/mcp" }
+    "funding-finder": { "url": "https://federal-funding-finder.netlify.app/mcp" }
   }
 }
 ```
+
+A custom domain (`https://<subdomain>.thelconsulting.com/mcp`) is planned and not set up yet (TODO). Docs: https://federal-funding-finder.netlify.app
 
 The same config ships as [mcp.json](mcp.json) for the Cursor plugin ([.cursor-plugin/plugin.json](.cursor-plugin/plugin.json)) and the Grok plugin ([.grok-plugin/plugin.json](.grok-plugin/plugin.json)).
 
@@ -76,9 +78,9 @@ Layout:
 
 ## Deploying
 
-Not done yet. Deploying needs a Netlify site linked to this repo (publish directory `docs`, functions in `netlify/functions`, both set in `netlify.toml`). Netlify Blobs needs no extra setup on a deployed site. Until a custom domain is set up, the endpoint would be `https://<site-name>.netlify.app/mcp`.
+The production site is `federal-funding-finder` on Netlify (https://federal-funding-finder.netlify.app), deployed from the CLI with `netlify deploy --prod` (publish directory `docs`, functions in `netlify/functions`, both set in `netlify.toml`). Netlify Blobs needs no extra setup on a deployed site.
 
-Rate limiting is per IP, 60 requests per minute by default (`RATE_LIMIT_PER_MINUTE` environment variable). It runs in function memory, so the limit applies per function instance, not globally.
+Rate limiting is per IP, 60 requests per minute. On Netlify it is enforced at the edge by the `rateLimit` rule in `netlify/functions/mcp.ts` (Netlify may take up to about 10 seconds to start blocking). A second limiter in function memory (`RATE_LIMIT_PER_MINUTE`, default 60) also applies per function instance and is what `netlify dev` and the stdio entry use.
 
 ## Data sources
 

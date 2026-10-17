@@ -8,7 +8,7 @@ Federal Funding Finder is a read-only MCP server. It has no accounts and collect
 | --- | --- | --- |
 | Accounts, names, emails | None collected | None |
 | Your queries | Not logged. Public upstream responses are cached in Netlify Blobs under a SHA-256 hash of the upstream request. | Each entry carries a 30 to 60 minute expiry. Expired entries are ignored and deleted on the next read; until then they stay in the store. |
-| IP address | A salted hash, held only in function memory, for per-IP rate limiting. The raw IP is not stored or logged. | Counter resets every 60 seconds |
+| IP address | Counted by Netlify's edge rate limiter (per IP, 60 requests per minute) and, as a salted hash, in function memory. This server does not store or log the raw IP. | Counters reset every 60 seconds |
 | Logs | Aggregate lines only: tool name, success or failure, duration. No query text, no IPs. | Netlify function log retention |
 
 The cache holds public federal data, not anything about you. Netlify, as the host, processes request metadata under its own policies.
