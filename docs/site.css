@@ -1,0 +1,37 @@
+/* Layout for the docs pages. Every value is a Quartz token from vendor/quartz/tokens.css. */
+.quartz { margin: 0; background: var(--surface-canvas); color: var(--text-1); font: var(--type-body); font-feature-settings: var(--features-data); }
+.page { max-width: var(--container); margin: 0 auto; padding: var(--space-6) var(--gutter); display: flex; flex-direction: column; gap: var(--space-8); }
+.topbar { display: flex; align-items: center; gap: var(--space-3); height: var(--space-10); }
+.topbar img { width: var(--space-8); height: var(--space-8); }
+.topbar a { color: var(--text-2); font: var(--type-label); text-decoration: none; }
+.topbar a:hover { color: var(--text-1); }
+.topbar .name { color: var(--text-1); }
+.topbar .spacer { flex: 1; }
+h1 { font: var(--type-display); letter-spacing: var(--tracking-display); margin: 0; }
+h2 { font: var(--type-heading-sm); margin: 0; }
+p { margin: 0; color: var(--text-2); max-width: 70ch; }
+.lede { display: flex; flex-direction: column; gap: var(--space-3); }
+.lede p { font: var(--type-body-lg); }
+.frame { background: var(--surface-page); box-shadow: 0 0 0 var(--line-hair) var(--line-frame); border-radius: var(--radius-frame); overflow: hidden; }
+.frame-header { display: flex; align-items: center; gap: var(--space-2); height: var(--space-10); padding: 0 var(--space-4); box-shadow: inset 0 calc(-1 * var(--line-hair)) 0 var(--line-row); }
+.frame-header .title { font: var(--type-label); color: var(--text-1); }
+.frame-header .meta { font: var(--type-label); color: var(--text-3); }
+.frame-body { padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); }
+.frame-footer { padding: var(--space-2) var(--space-4); font: var(--type-label-sm); color: var(--text-3); box-shadow: inset 0 var(--line-hair) 0 var(--line-row); }
+table { width: 100%; border-collapse: collapse; }
+th { font: var(--type-label); color: var(--text-3); text-align: left; height: var(--space-10); padding: 0 var(--space-4); }
+td { font: var(--type-body); color: var(--text-1); height: var(--space-10); padding: var(--space-2) var(--space-4); box-shadow: inset 0 var(--line-hair) 0 var(--line-row); vertical-align: middle; }
+td .desc { display: block; font: var(--type-body-sm); color: var(--text-3); }
+th.status, td.status { text-align: right; width: var(--status-column); }
+code, .id { font: var(--type-code); font-size: var(--code-inline); }
+pre { margin: 0; background: var(--surface-card); border-radius: var(--radius-soft); padding: var(--space-3) var(--space-4); font: var(--type-code); color: var(--code-text); overflow-x: auto; }
+.status-word { font: var(--type-state-word); color: var(--text-1); }
+.status-word[data-status="warn"] { color: var(--warn-text); }
+.status-word[data-status="fail"] { color: var(--fail-text); }
+.kind { display: inline-block; font: var(--type-label-sm); color: var(--accent-label); background: var(--accent-tint); border-radius: var(--radius-inner); padding: 0 var(--space-1); }
+a { color: var(--text-1); text-decoration-color: var(--border-control); text-underline-offset: var(--space-0-5); }
+a:focus-visible { outline: var(--line-focus) solid var(--border-focus); outline-offset: var(--focus-offset); border-radius: var(--radius-inner); }
+ul { margin: 0; padding-left: var(--space-5); color: var(--text-2); display: flex; flex-direction: column; gap: var(--space-1); }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(calc(var(--space-30) * 3), 1fr)); gap: var(--space-3); }
+footer { font: var(--type-body-sm); color: var(--text-3); }
+.stack { display: flex; flex-direction: column; gap: var(--space-8); }

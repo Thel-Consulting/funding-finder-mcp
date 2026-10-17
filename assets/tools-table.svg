@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="296" viewBox="0 0 880 296" role="img" aria-labelledby="t">
+  <title id="t">Federal Funding Finder tools: five read-only tools and their data sources</title>
+  <style>
+    /* Quartz tokens (vendor/quartz/tokens.css): surface-canvas, surface-page, line-frame, line-row, text-1, text-3, type-label, type-body-sm, type-code. Hex attributes are sRGB fallbacks. */
+    .canvas { fill: oklch(99.1% 0.002 250); }
+    .page { fill: oklch(99.7% 0.001 250); stroke: oklch(20% 0.024 262 / 0.14); }
+    .row { stroke: oklch(20% 0.024 262 / 0.08); }
+    .t1 { fill: oklch(20% 0.024 262); }
+    .t3 { fill: oklch(20% 0.024 262 / 0.66); }
+    text { font-family: "Quartz Sans", ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 400; }
+    .sm { font-size: 13px; font-weight: 380; }
+    .mono { font-family: "Quartz Mono", ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; }
+  </style>
+  <rect class="canvas" width="880" height="296" fill="#fbfcfd"/>
+  <rect class="page" x="12.5" y="12.5" width="855" height="271" rx="10" fill="#fefeff" stroke="#dcdde0"/>
+  <text class="t1" x="28" y="37" fill="#101621">Tools</text><text class="t3" x="70" y="37" fill="#61656c">5</text>
+  <line class="row" x1="13" x2="867" y1="52.5" y2="52.5" stroke="#ebebed"/>
+  <text class="t3" x="28" y="77" fill="#61656c">Tool</text><text class="t3" x="300" y="77" fill="#61656c">What it does</text><text class="t3" x="660" y="77" fill="#61656c">Source</text>
+  <g>
+    <line class="row" x1="13" x2="867" y1="92.5" y2="92.5" stroke="#ebebed"/>
+    <text class="t1 mono" x="28" y="117" fill="#101621">search_open_opportunities</text><text class="t1 sm" x="300" y="117" fill="#101621">Forecasted and posted opportunities</text><text class="t1" x="660" y="117" fill="#101621">Grants.gov search2</text>
+    <line class="row" x1="13" x2="867" y1="130.5" y2="130.5" stroke="#ebebed"/>
+    <text class="t1 mono" x="28" y="155" fill="#101621">search_nih_awards</text><text class="t1 sm" x="300" y="155" fill="#101621">SBIR/STTR projects by state, institute, year</text><text class="t1" x="660" y="155" fill="#101621">NIH RePORTER v2</text>
+    <line class="row" x1="13" x2="867" y1="168.5" y2="168.5" stroke="#ebebed"/>
+    <text class="t1 mono" x="28" y="193" fill="#101621">search_nsf_awards</text><text class="t1 sm" x="300" y="193" fill="#101621">Awards by keyword, state, award date</text><text class="t1" x="660" y="193" fill="#101621">NSF Award Search</text>
+    <line class="row" x1="13" x2="867" y1="206.5" y2="206.5" stroke="#ebebed"/>
+    <text class="t1 mono" x="28" y="231" fill="#101621">similar_funded_projects</text><text class="t1 sm" x="300" y="231" fill="#101621">Funded projects closest to a description</text><text class="t1" x="660" y="231" fill="#101621">NIH and NSF</text>
+    <line class="row" x1="13" x2="867" y1="244.5" y2="244.5" stroke="#ebebed"/>
+    <text class="t1 mono" x="28" y="269" fill="#101621">agency_sbir_summary</text><text class="t1 sm" x="300" y="269" fill="#101621">Counts and totals by fiscal year and state</text><text class="t1" x="660" y="269" fill="#101621">NIH or NSF</text>
+  </g>
+</svg>

@@ -1,0 +1,22 @@
+{
+  "name": "funding-finder",
+  "version": "0.1.0",
+  "description": "Read-only search over SBIR/STTR and federal grants: open Grants.gov opportunities, NIH RePORTER awards and NSF awards, with a source link on every result.",
+  "author": {
+    "name": "Thel Consulting"
+  },
+  "homepage": "https://github.com/Thel-Consulting/funding-finder-mcp",
+  "repository": "https://github.com/Thel-Consulting/funding-finder-mcp",
+  "license": "MIT",
+  "keywords": [
+    "sbir",
+    "sttr",
+    "grants",
+    "nih",
+    "nsf",
+    "grants.gov",
+    "funding",
+    "mcp"
+  ],
+  "mcpServers": "mcp.json"
+}

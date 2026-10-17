@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 128 128" role="img" aria-labelledby="t">
+  <title id="t">Federal Funding Finder (draft logo)</title>
+  <style>
+    /* Quartz tokens: --ink-c 20% 0.024 262, --paper-c 99.7% 0.001 250, --hue-3-mark oklch(72% 0.100 250). Hex attributes are sRGB fallbacks. */
+    .plate { fill: oklch(20% 0.024 262); }
+    .paper { stroke: oklch(99.7% 0.001 250); }
+    .mark { fill: oklch(72% 0.100 250); }
+  </style>
+  <rect class="plate" width="128" height="128" rx="10" fill="#101621"/>
+  <rect class="mark" x="38" y="60" width="9" height="14" fill="#73a9e1"/>
+  <rect class="mark" x="51" y="51" width="9" height="23" fill="#73a9e1"/>
+  <rect class="mark" x="64" y="42" width="9" height="32" fill="#73a9e1"/>
+  <circle class="paper" cx="56" cy="58" r="30" fill="none" stroke="#fefeff" stroke-width="8"/>
+  <path class="paper" d="M78 80 L102 104" fill="none" stroke="#fefeff" stroke-width="10" stroke-linecap="butt"/>
+</svg>

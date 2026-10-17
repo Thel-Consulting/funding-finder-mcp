@@ -1,0 +1,56 @@
+{
+ "response": {
+  "award": [
+   {
+    "id": "2036316",
+    "title": "SBIR Phase I:  Ultra-High Throughput COVID-19 Serology Test Using a Novel Biomarker Multiplexing System",
+    "agency": "NSF",
+    "awardeeName": "Inanovate, Inc.",
+    "awardeeCity": "SIOUX FALLS",
+    "awardeeStateCode": "SD",
+    "fundsObligatedAmt": "255851",
+    "estimatedTotalAmt": "255851",
+    "date": "12/21/2020",
+    "startDate": "12/15/2020",
+    "expDate": "05/31/2022",
+    "fundProgramName": "SBIR Phase I",
+    "abstractText": "The broader impact/commercial potential of this Small Business Innovation Research (SBIR) Phase I project is to create a rapid, inexpensive, and ultra-high throughput test to screen patients for antibodies against the SARS-CoV-2 virus that causes COVID-19. The proposed test will facilitate population-wide screening for prior exposure, giving epidemiologists and policy-makers insight into the virus"
+   },
+   {
+    "id": "1950746",
+    "title": "SBIR Phase II:  A Novel Method for Atmospheric Correction of Earth Observation Satellite Data",
+    "agency": "NSF",
+    "awardeeName": "ADVANCED REMOTE SENSING, INC.",
+    "awardeeCity": "HARTFORD",
+    "awardeeStateCode": "SD",
+    "fundsObligatedAmt": "732948",
+    "estimatedTotalAmt": "682948",
+    "date": "04/03/2020",
+    "startDate": "04/15/2020",
+    "expDate": "07/31/2022",
+    "fundProgramName": "SBIR Phase II",
+    "abstractText": "The broader impact/commercial potential of this Small Business Innovation Research (SBIR) project is to improve satellite-based agricultural imaging to allow monitoring and managing of broad regions for enhanced sustainability and food security.  The proposed algorithms address noise in satellite data that is caused by the atmosphere.  The method can be used for many types of satellites, providing"
+   },
+   {
+    "id": "1840196",
+    "title": "SBIR Phase I:  A Novel Method for Atmospheric Correction of Earth Observation Satellite Data",
+    "agency": "NSF",
+    "awardeeName": "ADVANCED REMOTE SENSING, INC.",
+    "awardeeCity": "HARTFORD",
+    "awardeeStateCode": "SD",
+    "fundsObligatedAmt": "225000",
+    "estimatedTotalAmt": "225000",
+    "date": "01/29/2019",
+    "startDate": "02/01/2019",
+    "expDate": "09/30/2019",
+    "fundProgramName": "SBIR Phase I",
+    "abstractText": "The broader impact/commercial potential of this Small Business Innovation Research (SBIR) project is to provide software service to correct Earth observation satellite (EOS) data to at-ground reflectance. EOS must look through the Earth?s atmosphere that induces systematic error in measuring the actual reflectance of ground targets through scatter and attenuation of light. Atmospherically-induced "
+   }
+  ],
+  "metadata": {
+   "offset": 0,
+   "rpp": 3,
+   "totalCount": 34
+  }
+ }
+}

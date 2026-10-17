@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.netlify/
+.dev.vars
+.env*
+*.log
+design/quartz/
+design/quartz-src/
+artifacts/

@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "types": [
+      "node"
+    ],
+    "strict": true,
+    "skipLibCheck": true,
+    "outDir": "dist",
+    "rootDir": ".",
+    "declaration": false,
+    "esModuleInterop": true
+  },
+  "include": [
+    "src",
+    "netlify",
+    "scripts",
+    "test",
+    "vitest.config.ts"
+  ]
+}

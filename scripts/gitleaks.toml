@@ -1,0 +1,6 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Third-party and generated files"
+paths = ['''node_modules/''', '''\.netlify/''', '''dist/''', '''design/quartz-src/''', '''design/quartz/''', '''package-lock\.json''']

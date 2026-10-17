@@ -1,0 +1,69 @@
+{
+ "errorcode": 0,
+ "msg": "Webservice Succeeds",
+ "data": {
+  "searchParams": {
+   "resultType": "json",
+   "searchOnly": false,
+   "oppNum": "",
+   "cfda": "",
+   "sortBy": "",
+   "oppStatuses": "forecasted|posted",
+   "startRecordNum": 0,
+   "eligibilities": "",
+   "fundingInstruments": "",
+   "fundingCategories": "",
+   "agencies": "",
+   "rows": 3,
+   "keyword": "SBIR",
+   "keywordEncoded": true
+  },
+  "hitCount": 28,
+  "startRecord": 0,
+  "oppHits": [
+   {
+    "id": "359726",
+    "number": "FOR-CA-25-086",
+    "title": "Forecast to Publish a Notice of Funding Opportunity for SBIR Phase IIB Bridge Awards to Accelerate the Development of Cancer-Relevant Technologies Toward Commercialization (R44 Clinical Trial Optional)",
+    "agencyCode": "HHS-NIH11",
+    "agency": "National Institutes of Health",
+    "openDate": "06/16/2025",
+    "closeDate": "",
+    "oppStatus": "forecasted",
+    "docType": "forecast",
+    "cfdaList": [
+     "93.395",
+     "93.394"
+    ]
+   },
+   {
+    "id": "358912",
+    "number": "TEMP-30794",
+    "title": "NIEHS Worker Training Program&rsquo;s SBIR E-Learning for HAZMAT and Emergency Response (R43/R44 Clinical Trial Not Allowed)",
+    "agencyCode": "HHS-NIH11",
+    "agency": "National Institutes of Health",
+    "openDate": "05/21/2025",
+    "closeDate": "",
+    "oppStatus": "forecasted",
+    "docType": "forecast",
+    "cfdaList": [
+     "93.142"
+    ]
+   },
+   {
+    "id": "363966",
+    "number": "HHS-2027-ACL-NIDILRR-BISA-0308",
+    "title": "Small Business Innovation Research (SBIR) program, Phase I",
+    "agencyCode": "HHS-ACL",
+    "agency": "Administration for Community Living",
+    "openDate": "09/25/2026",
+    "closeDate": "",
+    "oppStatus": "forecasted",
+    "docType": "forecast",
+    "cfdaList": [
+     "93.433"
+    ]
+   }
+  ]
+ }
+}

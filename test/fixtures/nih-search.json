@@ -1,0 +1,88 @@
+{
+ "meta": {
+  "search_id": "WNyQKmwkoEeIC_8RXh2hpQ",
+  "total": 4,
+  "offset": 0,
+  "limit": 3,
+  "sort_field": null,
+  "sort_order": "ASC",
+  "sorted_by_relevance": false,
+  "properties": {
+   "URL": "https:/reporter.nih.gov/search/WNyQKmwkoEeIC_8RXh2hpQ/projects"
+  }
+ },
+ "results": [
+  {
+   "appl_id": 10822963,
+   "fiscal_year": 2024,
+   "project_num": "1R43GM153076-01",
+   "organization": {
+    "org_name": "RTUTOR, LLC",
+    "org_city": "Brookings",
+    "org_state": "SD",
+    "org_country": "UNITED STATES"
+   },
+   "activity_code": "R43",
+   "award_amount": 273987,
+   "agency_ic_admin": {
+    "code": "GM",
+    "abbreviation": "NIGMS",
+    "name": "National Institute of General Medical Sciences",
+    "admin_org_id": "12500024",
+    "admin_funding_url": ""
+   },
+   "project_start_date": "2024-07-15T00:00:00",
+   "project_end_date": "2025-07-14T00:00:00",
+   "core_project_num": "R43GM153076",
+   "project_title": "Democratizing statistical computing through AI"
+  },
+  {
+   "appl_id": 11186600,
+   "fiscal_year": 2025,
+   "project_num": "1R41HG014101-01A1",
+   "organization": {
+    "org_name": "RTUTOR, LLC",
+    "org_city": "Brookings",
+    "org_state": "SD",
+    "org_country": "UNITED STATES"
+   },
+   "activity_code": "R41",
+   "award_amount": 395316,
+   "agency_ic_admin": {
+    "code": "HG",
+    "abbreviation": "NHGRI",
+    "name": "National Human Genome Research Institute",
+    "admin_org_id": "12500074",
+    "admin_funding_url": ""
+   },
+   "project_start_date": "2025-09-04T00:00:00",
+   "project_end_date": "2027-08-31T00:00:00",
+   "core_project_num": "R41HG014101",
+   "project_title": "Commercializing iDEP, an interactive and reproducible tool for analyzing RNA-Seq data"
+  },
+  {
+   "appl_id": 10820645,
+   "fiscal_year": 2024,
+   "project_num": "1R41AG085816-01",
+   "organization": {
+    "org_name": "OMEGAQUANT ANALYTICS, LLC",
+    "org_city": "SIOUX FALLS",
+    "org_state": "SD",
+    "org_country": "UNITED STATES"
+   },
+   "activity_code": "R41",
+   "award_amount": 506500,
+   "agency_ic_admin": {
+    "code": "AG",
+    "abbreviation": "NIA",
+    "name": "National Institute on Aging",
+    "admin_org_id": "12500002",
+    "admin_funding_url": ""
+   },
+   "project_start_date": "2023-12-01T00:00:00",
+   "project_end_date": "2025-11-30T00:00:00",
+   "core_project_num": "R41AG085816",
+   "project_title": "Developing a blood fatty acid-based algorithm as an early predictor of cognitive decline and dementia: Applying machine learning to harmonized data from prospective cohort studies"
+  }
+ ]
+}

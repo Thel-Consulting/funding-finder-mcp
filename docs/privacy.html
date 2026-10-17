@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy: Federal Funding Finder</title>
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="vendor/quartz/tokens.css">
+<link rel="stylesheet" href="site.css">
+</head>
+<body class="quartz">
+<div class="page">
+  <header class="topbar">
+    <img src="logo.svg" alt="">
+    <a class="name" href="index.html">Federal Funding Finder</a>
+    <span class="spacer"></span>
+    <a href="privacy.html" aria-current="page">Privacy</a>
+  </header>
+  <main class="stack">
+    <section class="lede">
+      <h1>Privacy</h1>
+      <p>Federal Funding Finder has no accounts and stores no personal information. This page matches PRIVACY.md in the repository.</p>
+    </section>
+    <section class="frame" aria-labelledby="what-title">
+      <div class="frame-header"><span class="title" id="what-title">What the server keeps</span></div>
+      <table aria-label="What the server keeps">
+        <thead><tr><th>Data</th><th>Kept</th><th>How long</th></tr></thead>
+        <tbody>
+          <tr><td>Accounts, names, emails</td><td>None collected</td><td>None</td></tr>
+          <tr><td>Your queries</td><td>Not logged. Public upstream responses are cached in Netlify Blobs under a SHA-256 hash of the upstream request.</td><td>Treated as expired after 30 to 60 minutes and deleted on the next read</td></tr>
+          <tr><td>IP address</td><td>A salted hash, held only in function memory for rate limiting. The raw IP is not stored or logged.</td><td>Counter resets every 60 seconds</td></tr>
+          <tr><td>Logs</td><td>Tool name, success or failure, and duration. No query text, no IPs.</td><td>Netlify function log retention</td></tr>
+        </tbody>
+      </table>
+    </section>
+    <section class="frame" aria-labelledby="terms-title">
+      <div class="frame-header"><span class="title" id="terms-title">Upstream terms</span></div>
+      <div class="frame-body">
+        <p>Queries are forwarded to public federal APIs, which have their own terms and privacy policies.</p>
+        <ul>
+          <li><a href="https://www.grants.gov/terms-of-use">Grants.gov terms of use</a> and <a href="https://www.grants.gov/privacy">Grants.gov privacy policy</a></li>
+          <li><a href="https://api.reporter.nih.gov/">NIH RePORTER API notes and usage limits</a> and <a href="https://reporter.nih.gov/faqs">RePORTER FAQs</a></li>
+          <li><a href="https://resources.research.gov/common/webapi/awardapisearch-v1.htm">NSF Award Search API documentation</a> and <a href="https://www.nsf.gov/policies/privacy">NSF privacy policy</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer>Questions: open an issue at <a href="https://github.com/Thel-Consulting/funding-finder-mcp/issues">github.com/Thel-Consulting/funding-finder-mcp</a>.</footer>
+</div>
+</body>
+</html>

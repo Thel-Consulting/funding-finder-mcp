@@ -1,0 +1,12 @@
+[build]
+  publish = "docs"
+  command = "echo 'No build step: docs/ is static, functions are bundled by Netlify'"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[dev]
+  framework = "#static"
+  port = 8888
+  publish = "docs"

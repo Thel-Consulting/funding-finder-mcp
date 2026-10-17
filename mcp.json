@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "funding-finder": {
+      "url": "https://<subdomain>.thelconsulting.com/mcp"
+    }
+  }
+}

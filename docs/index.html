@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Federal Funding Finder</title>
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="vendor/quartz/tokens.css">
+<link rel="stylesheet" href="site.css">
+</head>
+<body class="quartz">
+<div class="page">
+  <header class="topbar">
+    <img src="logo.svg" alt="">
+    <a class="name" href="index.html">Federal Funding Finder</a>
+    <span class="spacer"></span>
+    <a href="privacy.html">Privacy</a>
+    <a href="https://github.com/Thel-Consulting/funding-finder-mcp">Source</a>
+  </header>
+
+  <main class="stack">
+    <section class="lede">
+      <h1>Federal Funding Finder</h1>
+      <p>A free, open-source, read-only MCP server for SBIR/STTR and federal grants. It searches Grants.gov, NIH RePORTER and the NSF Award Search API, and every result links back to its source.</p>
+    </section>
+
+    <section class="frame" aria-labelledby="tools-title">
+      <div class="frame-header"><span class="title" id="tools-title">Tools</span><span class="meta">5</span></div>
+      <table aria-label="Tools">
+        <thead><tr><th>Tool</th><th>Source</th><th class="status">Contract test</th></tr></thead>
+        <tbody>
+          <tr><td><code>search_open_opportunities</code><span class="desc">Forecasted and posted opportunities by keyword, agency and eligibility</span></td><td>Grants.gov search2</td><td class="status"><span class="status-word">OK</span></td></tr>
+          <tr><td><code>search_nih_awards</code><span class="desc">NIH projects by activity code, state, institute, text and fiscal year</span></td><td>NIH RePORTER v2</td><td class="status"><span class="status-word">OK</span></td></tr>
+          <tr><td><code>search_nsf_awards</code><span class="desc">NSF awards by keyword, state, award date and SBIR/STTR program</span></td><td>NSF Award Search</td><td class="status"><span class="status-word">OK</span></td></tr>
+          <tr><td><code>similar_funded_projects</code><span class="desc">Funded projects ranked by term overlap with a description</span></td><td>NIH and NSF</td><td class="status"><span class="status-word">OK</span></td></tr>
+          <tr><td><code>agency_sbir_summary</code><span class="desc">Counts and dollar totals by fiscal year and state</span></td><td>NIH or NSF</td><td class="status"><span class="status-word">OK</span></td></tr>
+        </tbody>
+      </table>
+      <div class="frame-footer">Contract tests call the real APIs. Last local run 2026-10-16.</div>
+    </section>
+
+    <section class="grid">
+      <div class="frame">
+        <div class="frame-header"><span class="title">Connect</span></div>
+        <div class="frame-body">
+          <p>Add the server URL to your MCP client.</p>
+          <pre>{
+  "mcpServers": {
+    "funding-finder": { "url": "https://&lt;subdomain&gt;.thelconsulting.com/mcp" }
+  }
+}</pre>
+          <p>The hosted URL is not live yet. Run it locally with <code>npm run dev</code> (Netlify CLI) and use <code>http://localhost:8888/mcp</code>.</p>
+        </div>
+      </div>
+      <div class="frame">
+        <div class="frame-header"><span class="title">Example prompts</span></div>
+        <div class="frame-body">
+          <ul>
+            <li>NIH SBIR awards to South Dakota companies since 2020</li>
+            <li>Open Grants.gov SBIR opportunities for small businesses</li>
+            <li>NSF SBIR awards in South Dakota</li>
+            <li>Funded projects similar to a biofilm wound dressing</li>
+            <li>NIH SBIR/STTR totals by year for South Dakota</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="frame" aria-labelledby="sources-title">
+      <div class="frame-header"><span class="title" id="sources-title">Data sources</span><span class="meta">3</span></div>
+      <table aria-label="Data sources">
+        <thead><tr><th>Source</th><th>Endpoint</th></tr></thead>
+        <tbody>
+          <tr><td><a href="https://www.grants.gov/api/common/search2">Grants.gov search2 API</a></td><td><code>POST https://api.grants.gov/v1/api/search2</code></td></tr>
+          <tr><td><a href="https://api.reporter.nih.gov/">NIH RePORTER API</a></td><td><code>POST https://api.reporter.nih.gov/v2/projects/search</code></td></tr>
+          <tr><td><a href="https://resources.research.gov/common/webapi/awardapisearch-v1.htm">NSF Award Search API</a></td><td><code>GET https://www.research.gov/awardapi-service/v1/awards.json</code></td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer>MIT License. Copyright Thel Consulting. Not affiliated with any federal agency. Styled with the Quartz design system (MIT, Arlan Marat).</footer>
+</div>
+</body>
+</html>
