@@ -1,0 +1,165 @@
+{
+  "errorcode": 0,
+  "msg": "Webservice Succeeds",
+  "data": {
+    "hitCount": 966,
+    "oppHits": [
+      {
+        "id": "359120",
+        "number": "PAS-TUNIS-FY2025",
+        "title": "Annual Program Statement (APS) for Fiscal Year 2025",
+        "agencyCode": "DOS-TUN",
+        "agency": "U.S. Mission to Tunisia",
+        "openDate": "06/02/2025",
+        "closeDate": "",
+        "oppStatus": "forecasted",
+        "docType": "forecast",
+        "cfdaList": [
+          "19.040"
+        ]
+      },
+      {
+        "id": "358676",
+        "number": "PDS-CAIRO-001-FY25",
+        "title": "U.S. Embassy Cairo Public Diplomacy Section  Annual Program Statement",
+        "agencyCode": "DOS-EGY",
+        "agency": "U.S. Mission to Egypt",
+        "openDate": "04/23/2025",
+        "closeDate": "",
+        "oppStatus": "forecasted",
+        "docType": "forecast",
+        "cfdaList": [
+          "19.040"
+        ]
+      },
+      {
+        "id": "332126",
+        "number": "EDA-DEN-TA-DRO-2021-2006850",
+        "title": "Denver FY 2021 &ndash; FY 2023 EDA Planning and Local Technical Assistance",
+        "agencyCode": "DOC",
+        "agency": "Department of Commerce",
+        "openDate": "03/15/2021",
+        "closeDate": "",
+        "oppStatus": "posted",
+        "docType": "synopsis",
+        "cfdaList": [
+          "11.303",
+          "11.302"
+        ]
+      },
+      {
+        "id": "346815",
+        "number": "PWEAA2023",
+        "title": "FY 2025 EDA Public Works and Economic Adjustment Assistance Programs",
+        "agencyCode": "DOC-EDA",
+        "agency": "Economic Development Administration",
+        "openDate": "03/14/2023",
+        "closeDate": "",
+        "oppStatus": "posted",
+        "docType": "synopsis",
+        "cfdaList": [
+          "11.307",
+          "11.300"
+        ]
+      },
+      {
+        "id": "359225",
+        "number": "EDA-DISASTER-2025",
+        "title": "EDA FY25 Disaster Supplemental",
+        "agencyCode": "DOC-EDA",
+        "agency": "Economic Development Administration",
+        "openDate": "06/04/2025",
+        "closeDate": "",
+        "oppStatus": "posted",
+        "docType": "synopsis",
+        "cfdaList": [
+          "11.307"
+        ]
+      },
+      {
+        "id": "58617",
+        "number": "VA-GRANTS-112508-002",
+        "title": "State Veterans Home Construction Grant Program",
+        "agencyCode": "VA-CSHF",
+        "agency": "Construction of State Home Facilities",
+        "openDate": "11/01/2010",
+        "closeDate": "",
+        "oppStatus": "posted",
+        "docType": "synopsis",
+        "cfdaList": [
+          "64.005"
+        ]
+      },
+      {
+        "id": "361554",
+        "number": "DFOP0017204",
+        "title": "Annual Program Statement for U.S. Presentation at International Art Biennales",
+        "agencyCode": "DOS-ECA",
+        "agency": "Bureau Of Educational and Cultural Affairs",
+        "openDate": "03/19/2026",
+        "closeDate": "01/01/2099",
+        "oppStatus": "posted",
+        "docType": "synopsis",
+        "cfdaList": [
+          "19.415"
+        ]
+      },
+      {
+        "id": "339686",
+        "number": "PRM-A-NOI-01",
+        "title": "Notice of Intent to Publish a Request for Concept Notes Announcement on Capacity Development for the Reception &amp; Placement Program",
+        "agencyCode": "DOS-PRM",
+        "agency": "Bureau of Population Refugees and Migration",
+        "openDate": "04/21/2022",
+        "closeDate": "",
+        "oppStatus": "forecasted",
+        "docType": "forecast",
+        "cfdaList": [
+          "19.510"
+        ]
+      },
+      {
+        "id": "359140",
+        "number": "FOR-MD-25-005",
+        "title": "Forecast to Renew the Funding Opportunity Announcement for Multiple Chronic Disease Research Centers Coordinating Center (U24 Clinical Trial Not Required)",
+        "agencyCode": "HHS-NIH11",
+        "agency": "National Institutes of Health",
+        "openDate": "05/27/2025",
+        "closeDate": "",
+        "oppStatus": "forecasted",
+        "docType": "forecast",
+        "cfdaList": [
+          "93.307"
+        ]
+      },
+      {
+        "id": "362638",
+        "number": "RFA-HG-28-005",
+        "title": "Limited Competition: The NHGRI Analysis, Visualization, and Informatics Lab-space (AnVIL) (U54 Clinical Trial Not Allowed)",
+        "agencyCode": "HHS-NIH11",
+        "agency": "National Institutes of Health",
+        "openDate": "06/02/2026",
+        "closeDate": "",
+        "oppStatus": "forecasted",
+        "docType": "forecast",
+        "cfdaList": [
+          "93.172"
+        ]
+      },
+      {
+        "id": "357305",
+        "number": "PAR-25-274",
+        "title": "Feasibility Clinical Trials of Mind and Body Interventions for NCCIH High Priority Research Topics (R34 Clinical Trial Required)",
+        "agencyCode": "HHS-NIH11",
+        "agency": "National Institutes of Health",
+        "openDate": "11/21/2024",
+        "closeDate": "11/17/2026",
+        "oppStatus": "posted",
+        "docType": "synopsis",
+        "cfdaList": [
+          "93.213"
+        ]
+      }
+    ]
+  }
+}

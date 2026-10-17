@@ -2,7 +2,14 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { Cache } from "./sources/http.js";
 import { UpstreamError } from "./sources/http.js";
-import { ELIGIBILITY_CODES, GRANTS_DOCS_URL, GRANTS_SEARCH_URL, searchGrants } from "./sources/grants.js";
+import {
+  ELIGIBILITY_CODES,
+  GRANTS_DOCS_URL,
+  GRANTS_SEARCH_URL,
+  denverToday,
+  searchGrantsFiltered,
+  type GrantsFilters,
+} from "./sources/grants.js";
 import {
   NIH_DOCS_URL,
   NIH_SEARCH_URL,
@@ -82,7 +89,11 @@ export function registerTools(server: McpServer, cache?: Cache) {
       title: "Search open federal funding opportunities (Grants.gov)",
       description:
         "Read-only. Searches forecasted and posted funding opportunities on Grants.gov (search2 API). " +
-        "Use it to find open SBIR/STTR solicitations and other grants. Every result links to its Grants.gov page.",
+        "Use it to find open SBIR/STTR solicitations and other grants. Every result links to its Grants.gov page. " +
+        "By default it drops noise that Grants.gov still lists: posted opportunities already closed, forecasts posted more than 365 days ago, " +
+        "posted opportunities with no close date that were posted more than 1460 days ago, and State Department overseas mission notices. " +
+        "Each filter can be turned off, and the result reports how many records each filter dropped. " +
+        "Filtering is client-side, so the tool scans up to 1000 upstream records to fill `rows` with filtered results.",
       inputSchema: strict({
         keyword: z.string().max(200).optional().describe("Free text, for example 'SBIR' or 'wound care'"),
         agency: z
@@ -95,20 +106,86 @@ export function registerTools(server: McpServer, cache?: Cache) {
           .optional()
           .describe(`Grants.gov eligibility codes. 23 = small businesses. Codes: ${Object.entries(ELIGIBILITY_CODES).map(([k, v]) => `${k} ${v}`).join("; ")}`),
         status: z.array(z.enum(["forecasted", "posted"])).optional().describe("Defaults to both forecasted and posted"),
-        rows: z.number().int().min(1).max(100).default(10),
-        offset: z.number().int().min(0).default(0),
+        open_only: z.boolean().default(true).describe("Drop posted opportunities whose close date is before today (America/Denver). Default true."),
+        exclude_no_close_date: z
+          .boolean()
+          .default(false)
+          .describe("Drop posted opportunities with no close date. Default false, because many are real rolling programs. Forecasts never have a close date on Grants.gov, so this does not apply to them."),
+        forecast_max_age_days: z
+          .number()
+          .int()
+          .min(0)
+          .max(3650)
+          .default(365)
+          .describe("Drop forecasts posted more than this many days ago. 0 turns it off. Default 365."),
+        rolling_max_age_days: z
+          .number()
+          .int()
+          .min(0)
+          .max(7300)
+          .default(1460)
+          .describe("Drop posted opportunities with no close date that were posted more than this many days ago. 0 turns it off. Default 1460 (4 years)."),
+        posted_after: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD")
+          .optional()
+          .describe("Drop anything (posted or forecast) with an open date before this date, YYYY-MM-DD. No default."),
+        domestic_only: z
+          .boolean()
+          .default(true)
+          .describe("Drop State Department overseas mission and embassy notices (agency code DOS-* named U.S. Mission, Embassy or Consulate). Default true."),
+        rows: z.number().int().min(1).max(100).default(10).describe("Results to return after filtering"),
+        offset: z.number().int().min(0).default(0).describe("Upstream record offset. Use next_offset from a previous result to continue."),
       }),
       annotations: { title: "Search open opportunities", ...READ_ONLY },
     },
     async (input) =>
       run("search_open_opportunities", async () => {
-        const res = await searchGrants(input, cache);
-        return ok(`Grants.gov returned ${res.total} matching opportunities; showing ${res.opportunities.length}.`, {
-          source: { name: "Grants.gov search2 API", endpoint: GRANTS_SEARCH_URL, docs: GRANTS_DOCS_URL },
-          total: res.total,
-          offset: input.offset,
-          results: res.opportunities,
-        });
+        const filters: GrantsFilters = {
+          openOnly: input.open_only,
+          excludeNoCloseDate: input.exclude_no_close_date,
+          forecastMaxAgeDays: input.forecast_max_age_days,
+          rollingMaxAgeDays: input.rolling_max_age_days,
+          postedAfter: input.posted_after,
+          domesticOnly: input.domestic_only,
+          today: denverToday(),
+        };
+        const res = await searchGrantsFiltered(
+          { keyword: input.keyword, agency: input.agency, eligibility: input.eligibility, status: input.status, rows: input.rows, offset: input.offset },
+          filters,
+          cache,
+        );
+        const droppedTotal = Object.values(res.dropped).reduce((a, b) => a + b, 0);
+        const droppedText = Object.entries(res.dropped)
+          .filter(([, n]) => n > 0)
+          .map(([k, n]) => `${k} ${n}`)
+          .join(", ");
+        const note =
+          `rows counts results after filtering. Grants.gov paginates server-side and has no date or domestic filters, so this call scanned ${res.scanned} of ${res.total} upstream records ` +
+          `(${res.pages} request${res.pages === 1 ? "" : "s"}) and dropped ${droppedTotal}. Drop counts cover only the scanned records.` +
+          (res.nextOffset !== null ? ` More records remain; pass offset ${res.nextOffset} to continue.` : " All matching upstream records were scanned.");
+        return ok(
+          `Grants.gov matched ${res.total} opportunities; showing ${res.opportunities.length} after filters (dropped ${droppedTotal}${droppedText ? `: ${droppedText}` : ""}).`,
+          {
+            source: { name: "Grants.gov search2 API", endpoint: GRANTS_SEARCH_URL, docs: GRANTS_DOCS_URL },
+            total: res.total,
+            offset: input.offset,
+            next_offset: res.nextOffset,
+            scanned: res.scanned,
+            today: filters.today,
+            filters: {
+              open_only: input.open_only,
+              exclude_no_close_date: input.exclude_no_close_date,
+              forecast_max_age_days: input.forecast_max_age_days,
+              rolling_max_age_days: input.rolling_max_age_days,
+              posted_after: input.posted_after ?? null,
+              domestic_only: input.domestic_only,
+            },
+            dropped: res.dropped,
+            note,
+            results: res.opportunities,
+          },
+        );
       }),
   );
 

@@ -16,11 +16,24 @@ All tools are read-only (`readOnlyHint: true`, `destructiveHint: false`) and val
 
 | Tool | What it does | Source |
 | --- | --- | --- |
-| `search_open_opportunities` | Forecasted and posted funding opportunities. Filters: keyword, agency code (for example `HHS-NIH11`, `NSF`, `DOD`), eligibility codes (`23` is small businesses), status, rows, offset. | Grants.gov search2 |
+| `search_open_opportunities` | Forecasted and posted funding opportunities. Filters: keyword, agency code (for example `HHS-NIH11`, `NSF`, `DOD`), eligibility codes (`23` is small businesses), status, rows, offset, plus the noise filters below. | Grants.gov search2 |
 | `search_nih_awards` | Funded NIH projects. Defaults to SBIR/STTR activity codes R43, R44, R41, R42. Filters: text, org states, institutes (IC), fiscal years, activity codes. | NIH RePORTER v2 |
 | `search_nsf_awards` | NSF awards. Defaults to SBIR/STTR (`fundProgramName=SBIR OR STTR`). Filters: keyword (supports AND, OR, NOT), awardee state, award date range, rows, offset. | NSF Award Search |
 | `similar_funded_projects` | Takes a project description, extracts key terms, searches NIH and NSF, and ranks funded projects by term overlap. | NIH and NSF |
 | `agency_sbir_summary` | SBIR/STTR counts and dollar totals by fiscal year, activity code or program, top organizations, and by state when no state is given. | NIH or NSF |
+
+Grants.gov noise filters (`search_open_opportunities`). Grants.gov keeps listing some records long after they stopped being useful, so these run on the server after each upstream page:
+
+| Parameter | Default | Drops |
+| --- | --- | --- |
+| `open_only` | `true` | Posted opportunities whose close date is before today (America/Denver). |
+| `forecast_max_age_days` | `365` | Forecasts posted more than this many days ago, for example 2024 and early 2025 forecasts that never turned into a posting. `0` turns it off. |
+| `rolling_max_age_days` | `1460` | Posted opportunities with no close date that were posted more than 4 years ago, for example the FY 2021 to FY 2023 EDA regional notices. Rolling programs from the last 4 years, such as EDA Public Works (posted 2023), are kept. `0` turns it off. |
+| `exclude_no_close_date` | `false` | Every posted opportunity with no close date. Off by default because many are real rolling programs. Forecasts never have a close date on Grants.gov, so it does not apply to them. |
+| `posted_after` | none | Anything, posted or forecast, with an open date before this `YYYY-MM-DD` date. |
+| `domestic_only` | `true` | State Department overseas posts: agency code `DOS-*` with an agency or title naming a U.S. Mission, Embassy or Consulate (for example `DOS-TUN`, U.S. Mission to Tunisia). Washington bureaus such as `DOS-ECA` stay. |
+
+Each result reports `dropped` (a count per filter), `scanned`, `next_offset` and a note, so nothing is hidden silently. `rows` counts results after filtering: the tool pages through Grants.gov 250 records at a time, up to 1,000 records per call, until it has `rows` results. Pass `next_offset` as `offset` to continue. On 2026-10-17 the research park query (eligibility `12`, `06`, `00`, `02`, `04`, 966 matches) kept 812 records with the defaults and dropped 136 stale forecasts, 9 stale rolling notices and 9 overseas mission notices. Grants.gov already omitted posted records past their close date, so `open_only` dropped none that day.
 
 Notes on the data:
 
@@ -34,6 +47,7 @@ Notes on the data:
 
 - NIH SBIR awards to South Dakota companies since 2020
 - Open Grants.gov SBIR opportunities that small businesses can apply to
+- Open grants a research park can apply to (nonprofit, higher education, state, city and special district eligibility)
 - NSF SBIR awards in South Dakota
 - Funded projects similar to a biofilm wound dressing
 - NIH SBIR/STTR totals by year for South Dakota

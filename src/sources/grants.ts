@@ -120,3 +120,94 @@ export async function searchGrants(p: GrantsSearchParams, cache?: Cache) {
   });
   return parseGrantsResponse(raw);
 }
+
+// Client-side filters. Grants.gov search2 has no date or domestic filters, so
+// these run on our side and every dropped record is counted by reason.
+export interface GrantsFilters {
+  openOnly: boolean;
+  excludeNoCloseDate: boolean;
+  forecastMaxAgeDays: number;
+  rollingMaxAgeDays: number;
+  postedAfter?: string;
+  domesticOnly: boolean;
+  today: string;
+}
+
+export const DROP_REASONS = [
+  "overseas_mission",
+  "closed",
+  "posted_before_cutoff",
+  "no_close_date",
+  "stale_forecast",
+  "stale_rolling",
+] as const;
+export type DropReason = (typeof DROP_REASONS)[number];
+
+export function denverToday(now = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Denver", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+}
+
+// Grants.gov dates are MM/DD/YYYY.
+export function isoDate(mdy: string | null) {
+  const m = mdy?.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  return m ? `${m[3]}-${m[1]}-${m[2]}` : null;
+}
+
+function ageDays(iso: string, today: string) {
+  return (Date.parse(today) - Date.parse(iso)) / 86_400_000;
+}
+
+// State Department overseas posts list as DOS-<country> with an agency name
+// like "U.S. Mission to Tunisia", or "U.S. Embassy ..." in the title.
+// Washington bureaus (DOS-ECA, DOS-PRM, ...) are not matched.
+export function isOverseasMission(o: Pick<Opportunity, "agencyCode" | "agency" | "title">) {
+  return /^DOS-/.test(o.agencyCode) && /\b(U\.?S\.? Mission|Mission to|Embassy|Consulate)\b/i.test(`${o.agency} ${o.title}`);
+}
+
+export function dropReason(o: Opportunity, f: GrantsFilters): DropReason | null {
+  const open = isoDate(o.openDate);
+  const close = isoDate(o.closeDate);
+  const posted = o.status === "posted";
+  if (f.domesticOnly && isOverseasMission(o)) return "overseas_mission";
+  if (f.openOnly && posted && close && close < f.today) return "closed";
+  if (f.postedAfter && open && open < f.postedAfter) return "posted_before_cutoff";
+  if (f.excludeNoCloseDate && posted && !close) return "no_close_date";
+  if (f.forecastMaxAgeDays > 0 && o.status === "forecasted" && open && ageDays(open, f.today) > f.forecastMaxAgeDays) return "stale_forecast";
+  if (f.rollingMaxAgeDays > 0 && posted && !close && open && ageDays(open, f.today) > f.rollingMaxAgeDays) return "stale_rolling";
+  return null;
+}
+
+const PAGE_ROWS = 250;
+const MAX_PAGES = 4;
+
+// Fetches upstream pages until `rows` records survive the filters, the
+// results run out, or MAX_PAGES pages (1000 records) have been scanned.
+export async function searchGrantsFiltered(p: GrantsSearchParams, f: GrantsFilters, cache?: Cache) {
+  const rows = p.rows ?? 10;
+  const dropped = Object.fromEntries(DROP_REASONS.map((r) => [r, 0])) as Record<DropReason, number>;
+  const kept: Opportunity[] = [];
+  let start = p.offset ?? 0;
+  let total = 0;
+  let scanned = 0;
+  let pages = 0;
+  let nextOffset: number | null = null;
+  while (pages < MAX_PAGES) {
+    const res = await searchGrants({ ...p, rows: PAGE_ROWS, offset: start }, cache);
+    pages++;
+    total = res.total;
+    for (const [i, o] of res.opportunities.entries()) {
+      scanned++;
+      const reason = dropReason(o, f);
+      if (reason) dropped[reason]++;
+      else kept.push(o);
+      if (kept.length === rows) {
+        nextOffset = start + i + 1 < total ? start + i + 1 : null;
+        return { total, scanned, pages, dropped, opportunities: kept, nextOffset, exhausted: nextOffset === null };
+      }
+    }
+    start += res.opportunities.length;
+    if (res.opportunities.length === 0 || start >= total) break;
+  }
+  nextOffset = start < total ? start : null;
+  return { total, scanned, pages, dropped, opportunities: kept, nextOffset, exhausted: nextOffset === null };
+}

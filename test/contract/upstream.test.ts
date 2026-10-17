@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { searchGrants } from "../../src/sources/grants.js";
+import { denverToday, dropReason, isOverseasMission, searchGrants, searchGrantsFiltered } from "../../src/sources/grants.js";
 import { searchNih, SBIR_STTR_ACTIVITY_CODES } from "../../src/sources/nih.js";
 import { searchNsf } from "../../src/sources/nsf.js";
 import { createServer } from "../../src/server.js";
@@ -20,6 +20,18 @@ describe("contract: Grants.gov search2", () => {
   it("honors the small business eligibility filter", async () => {
     const res = await searchGrants({ eligibility: ["23"], rows: 3 });
     expect(res.total).toBeGreaterThan(0);
+  });
+
+  it("default filters fill rows with clean results for a research park query", async () => {
+    const f = { openOnly: true, excludeNoCloseDate: false, forecastMaxAgeDays: 365, rollingMaxAgeDays: 1460, domesticOnly: true, today: denverToday() };
+    const res = await searchGrantsFiltered({ eligibility: ["12", "06", "00", "02", "04"], rows: 25 }, f);
+    expect(res.opportunities).toHaveLength(25);
+    for (const o of res.opportunities) {
+      expect(dropReason(o, f)).toBeNull();
+      expect(isOverseasMission(o)).toBe(false);
+    }
+    const dropped = Object.values(res.dropped).reduce((a, b) => a + b, 0);
+    expect(res.scanned).toBe(dropped + res.opportunities.length);
   });
 });
 
