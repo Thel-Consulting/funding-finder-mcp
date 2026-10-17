@@ -11,8 +11,10 @@
     "test:unit": "vitest run test/unit",
     "test:contract": "vitest run test/contract",
     "demo": "tsx scripts/demo.ts",
-    "inspect": "npx -y @modelcontextprotocol/inspector@2.11.0 --cli http://localhost:8888/mcp --transport http --method tools/list",
-    "scan:secrets": "bash scripts/secrets-scan.sh"
+    "inspect": "npx -y @modelcontextprotocol/inspector@2.11.0 --cli https://grants.thelconsulting.com/mcp --transport http --method tools/list",
+    "scan:secrets": "bash scripts/secrets-scan.sh",
+    "inspect:local": "npx -y @modelcontextprotocol/inspector@2.11.0 --cli http://localhost:8888/mcp --transport http --method tools/list",
+    "demo:local": "tsx scripts/demo.ts http://localhost:8888/mcp"
   },
   "author": "Thel Consulting",
   "license": "MIT",
@@ -35,5 +37,10 @@
   },
   "bin": {
     "funding-finder-mcp": "dist/src/stdio.js"
-  }
+  },
+  "homepage": "https://grants.thelconsulting.com",
+  "keywords": [
+    "federal-funding-finder",
+    "thel-consulting"
+  ]
 }

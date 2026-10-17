@@ -11,5 +11,8 @@ export function createServer(cache?: Cache) {
       "Every result carries a source URL. Cite those URLs when you present results.",
   });
   registerTools(server, cache);
+  // The tool list is fixed, so do not advertise list-change notifications.
+  // registerTool sets listChanged: true; this later call overrides it.
+  server.server.registerCapabilities({ tools: { listChanged: false } });
   return server;
 }

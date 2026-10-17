@@ -4,7 +4,7 @@
 
 A free, open-source, read-only [MCP](https://modelcontextprotocol.io) server for SBIR/STTR and federal grants. It searches Grants.gov, NIH RePORTER and the NSF Award Search API. Every result carries the URL of the record it came from.
 
-- No accounts, no API keys, no user data stored. See [PRIVACY.md](PRIVACY.md).
+- No accounts, no API keys. Queries are not stored or logged. See [PRIVACY.md](PRIVACY.md) and the [terms of use](TERMS.md).
 - TypeScript, the official `@modelcontextprotocol/sdk`, streamable HTTP transport, built as a Netlify Function (`/mcp`) with a Netlify Blobs response cache.
 - MIT licensed. Maintained by Thel Consulting.
 
@@ -54,17 +54,17 @@ Notes on the data:
 
 ## Connect
 
-Hosted endpoint on Netlify:
+Hosted endpoint:
 
 ```json
 {
   "mcpServers": {
-    "funding-finder": { "url": "https://federal-funding-finder.netlify.app/mcp" }
+    "funding-finder": { "url": "https://grants.thelconsulting.com/mcp" }
   }
 }
 ```
 
-A custom domain (`https://<subdomain>.thelconsulting.com/mcp`) is planned and not set up yet (TODO). Docs: https://federal-funding-finder.netlify.app
+Docs: https://grants.thelconsulting.com
 
 The same config ships as [mcp.json](mcp.json) for the Cursor plugin ([.cursor-plugin/plugin.json](.cursor-plugin/plugin.json)) and the Grok plugin ([.grok-plugin/plugin.json](.grok-plugin/plugin.json)).
 
@@ -75,8 +75,8 @@ Requires Node 20 or later and the [Netlify CLI](https://docs.netlify.com/cli/get
 ```sh
 npm install
 npm run dev            # netlify dev --offline: docs/ on http://localhost:8888, MCP at http://localhost:8888/mcp, local Blobs store
-npm run inspect        # MCP Inspector CLI, tools/list against the local server
-npm run demo           # calls each tool with the demo prompts and reports timings, writes artifacts/demo-output.json
+npm run inspect        # MCP Inspector CLI, tools/list against the hosted server (inspect:local for localhost)
+npm run demo           # runs the demo prompts against the hosted server, reports timings, writes artifacts/demo-output.json (demo:local for localhost)
 npm run stdio          # stdio transport, for clients or Inspector setups that launch a command
 npm test               # unit tests plus contract tests that call the real APIs
 npm run test:unit      # unit tests only, no network
@@ -87,12 +87,21 @@ Layout:
 
 - `netlify/functions/mcp.ts`: the MCP endpoint, `POST /mcp` (stateless streamable HTTP, JSON responses).
 - `netlify/functions/health.ts`: `GET /health`.
+- `netlify/functions/cache-cleanup.ts`: hourly job that deletes expired cache entries.
 - `src/`: tools, upstream clients, cache and rate limiter, shared by the function and the stdio entry (`src/stdio.ts`).
 - `docs/`: the static site (landing and privacy pages), published as is.
 
 ## Deploying
 
-The production site is `federal-funding-finder` on Netlify (https://federal-funding-finder.netlify.app), deployed from the CLI with `netlify deploy --prod` (publish directory `docs`, functions in `netlify/functions`, both set in `netlify.toml`). Netlify Blobs needs no extra setup on a deployed site.
+The production site is `federal-funding-finder` on Netlify, served at https://grants.thelconsulting.com (also https://federal-funding-finder.netlify.app). It is deployed from the CLI with `netlify deploy --prod` (publish directory `docs`, functions in `netlify/functions`, both set in `netlify.toml`). Netlify Blobs needs no extra setup on a deployed site.
+
+Environment variables:
+
+- `CACHE_KEY_SALT`: secret used to HMAC cache keys. Set it in Netlify, never in the repo. Without it each function instance uses a random secret and the cache is not shared between instances.
+- `ALLOWED_ORIGINS`: optional comma-separated list of extra browser origins allowed to call `/mcp`.
+- `RATE_LIMIT_PER_MINUTE`: in-function limiter, default 60.
+
+Origin check: requests with no `Origin` header (Cursor, Grok, the Inspector CLI and other server-side clients) are allowed. Browser requests are allowed only from this site's domains, `localhost` and `ALLOWED_ORIGINS`; other web origins get HTTP 403. This follows the MCP transport rule that servers validate `Origin` to block DNS rebinding.
 
 Rate limiting is per IP, 60 requests per minute. On Netlify it is enforced at the edge by the `rateLimit` rule in `netlify/functions/mcp.ts` (Netlify may take up to about 10 seconds to start blocking). A second limiter in function memory (`RATE_LIMIT_PER_MINUTE`, default 60) also applies per function instance and is what `netlify dev` and the stdio entry use.
 
@@ -103,6 +112,14 @@ Rate limiting is per IP, 60 requests per minute. On Netlify it is enforced at th
 - NSF Award Search API: `GET https://www.research.gov/awardapi-service/v1/awards.json`, falling back to `https://api.nsf.gov/services/v1/awards.json` ([docs](https://resources.research.gov/common/webapi/awardapisearch-v1.htm)). The service moved to Research.gov; the old host still answers.
 
 This project is not affiliated with or endorsed by any federal agency.
+
+## Support
+
+- Questions, bugs and feature requests: [GitHub issues](https://github.com/Thel-Consulting/funding-finder-mcp/issues).
+- Security problems: report privately, see [SECURITY.md](SECURITY.md).
+- Contributing: see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+The hosted service is free and provided as is, with no uptime promise. See [TERMS.md](TERMS.md).
 
 ## Design
 

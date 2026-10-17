@@ -109,6 +109,24 @@ export function parseGrantsResponse(raw: RawResponse): { total: number; opportun
   };
 }
 
+const HIT_FIELDS = ["id", "number", "title", "agencyCode", "agency", "openDate", "closeDate", "oppStatus", "docType", "cfdaList"] as const;
+
+// Keeps only hitCount and the listed hit fields. Drops searchParams (which
+// echoes the keyword and filters), suggestion and the facet lists. Errors are
+// not cached.
+export function sanitizeGrantsResponse(data: unknown) {
+  const raw = data as RawResponse;
+  if (!raw || raw.errorcode !== 0 || !raw.data) return undefined;
+  return {
+    errorcode: 0,
+    msg: "",
+    data: {
+      hitCount: raw.data.hitCount,
+      oppHits: (raw.data.oppHits ?? []).map((h) => Object.fromEntries(HIT_FIELDS.filter((k) => k in h).map((k) => [k, h[k]]))),
+    },
+  };
+}
+
 export async function searchGrants(p: GrantsSearchParams, cache?: Cache) {
   const raw = await fetchJson<RawResponse>({
     source: "Grants.gov",
@@ -117,6 +135,7 @@ export async function searchGrants(p: GrantsSearchParams, cache?: Cache) {
     body: buildGrantsBody(p),
     cache,
     ttlSeconds: 1800,
+    sanitize: sanitizeGrantsResponse,
   });
   return parseGrantsResponse(raw);
 }

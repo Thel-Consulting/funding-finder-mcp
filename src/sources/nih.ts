@@ -27,6 +27,7 @@ interface RawOrg {
 export interface RawNihProject {
   appl_id: number;
   project_num?: string;
+  core_project_num?: string;
   project_title?: string;
   fiscal_year?: number;
   award_amount?: number | null;
@@ -115,6 +116,40 @@ export function parseNihProject(r: RawNihProject, includeAbstract = false): NihP
   return p;
 }
 
+const PROJECT_FIELDS = [
+  "appl_id",
+  "project_num",
+  "core_project_num",
+  "project_title",
+  "fiscal_year",
+  "award_amount",
+  "activity_code",
+  "organization",
+  "agency_ic_admin",
+  "project_start_date",
+  "project_end_date",
+  "abstract_text",
+  "terms",
+] as const;
+const ORG_FIELDS = ["org_name", "org_city", "org_state"] as const;
+
+// Keeps meta.total/offset/limit and the listed project fields. Drops
+// meta.search_id and meta.properties.URL (a saved search that reveals the
+// criteria) and any investigator fields.
+export function sanitizeNihResponse(data: unknown) {
+  const raw = data as RawNihResponse;
+  if (!raw?.meta || !Array.isArray(raw.results)) return undefined;
+  return {
+    meta: { total: raw.meta.total, offset: raw.meta.offset, limit: raw.meta.limit },
+    results: raw.results.map((r) => {
+      const out: Record<string, unknown> = Object.fromEntries(PROJECT_FIELDS.filter((k) => k in r).map((k) => [k, r[k]]));
+      if (r.organization) out.organization = Object.fromEntries(ORG_FIELDS.filter((k) => k in r.organization!).map((k) => [k, r.organization![k]]));
+      if (r.agency_ic_admin) out.agency_ic_admin = { abbreviation: r.agency_ic_admin.abbreviation, name: r.agency_ic_admin.name };
+      return out;
+    }),
+  };
+}
+
 export async function searchNihRaw(p: NihSearchParams, cache?: Cache) {
   return fetchJson<RawNihResponse>({
     source: "NIH RePORTER",
@@ -124,6 +159,7 @@ export async function searchNihRaw(p: NihSearchParams, cache?: Cache) {
     cache,
     ttlSeconds: 3600,
     timeoutMs: p.timeoutMs ?? 8000,
+    sanitize: sanitizeNihResponse,
   });
 }
 

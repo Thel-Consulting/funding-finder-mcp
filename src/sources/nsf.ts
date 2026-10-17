@@ -121,6 +121,36 @@ export function parseNsfResponse(raw: RawNsfResponse, includeAbstract = false) {
   return { total: r.metadata?.totalCount ?? awards.length, awards };
 }
 
+const AWARD_FIELDS = [
+  "id",
+  "title",
+  "awardeeName",
+  "awardeeCity",
+  "awardeeStateCode",
+  "fundsObligatedAmt",
+  "estimatedTotalAmt",
+  "date",
+  "startDate",
+  "expDate",
+  "fundProgramName",
+  "abstractText",
+  "agency",
+] as const;
+
+// NSF ignores printFields and returns full records, including PI and program
+// officer names, emails and phone numbers. Keep only the listed award fields
+// and the total count. Responses with service notifications are not cached.
+export function sanitizeNsfResponse(data: unknown) {
+  const r = (data as RawNsfResponse)?.response;
+  if (!r || r.serviceNotification?.length) return undefined;
+  return {
+    response: {
+      metadata: { totalCount: r.metadata?.totalCount },
+      award: (r.award ?? []).map((a) => Object.fromEntries(AWARD_FIELDS.filter((k) => k in a).map((k) => [k, a[k]]))),
+    },
+  };
+}
+
 export async function searchNsf(p: NsfSearchParams & { includeAbstract?: boolean; timeoutMs?: number; fallback?: boolean }, cache?: Cache) {
   const qs = buildNsfQuery(p);
   let lastErr: unknown;
@@ -128,7 +158,14 @@ export async function searchNsf(p: NsfSearchParams & { includeAbstract?: boolean
   for (const base of endpoints) {
     const url = `${base}?${qs}`;
     try {
-      const raw = await fetchJson<RawNsfResponse>({ source: "NSF Award Search", url, cache, ttlSeconds: 3600, timeoutMs: p.timeoutMs ?? 8000 });
+      const raw = await fetchJson<RawNsfResponse>({
+        source: "NSF Award Search",
+        url,
+        cache,
+        ttlSeconds: 3600,
+        timeoutMs: p.timeoutMs ?? 8000,
+        sanitize: sanitizeNsfResponse,
+      });
       return { ...parseNsfResponse(raw, p.includeAbstract), queryUrl: url };
     } catch (err) {
       lastErr = err;

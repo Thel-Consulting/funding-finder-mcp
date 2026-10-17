@@ -21,6 +21,10 @@ export default async (request: Request, context: Context) =>
     cache: getCache(),
     ip: context.ip,
     perMinute: Number(process.env.RATE_LIMIT_PER_MINUTE ?? "60") || 60,
+    allowedOrigins: (process.env.ALLOWED_ORIGINS ?? "")
+      .split(",")
+      .map((o) => o.trim())
+      .filter(Boolean),
   });
 
 // Netlify's edge rate limit (per IP, all plans) is the real limit, since function

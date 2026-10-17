@@ -48,10 +48,12 @@ function ok(summary: string, data: Json) {
   return { content: [{ type: "text" as const, text: `${summary}\n\n${JSON.stringify(data, null, 2)}` }] };
 }
 
-function fail(err: unknown) {
+export function fail(err: unknown) {
   const message =
     err instanceof UpstreamError
-      ? `${err.message}. The upstream service may be down or slow; try again later.`
+      ? err.isClientError
+        ? `${err.message}. The upstream API rejected the request; check the parameters.`
+        : `${err.message}. The upstream service may be down or slow; try again later.`
       : err instanceof Error
         ? err.message
         : String(err);
@@ -330,7 +332,7 @@ export function registerTools(server: McpServer, cache?: Cache) {
           queries.push({ source: "NIH RePORTER", endpoint: NIH_SEARCH_URL, text: keywords.join(" "), operator: "or", upstreamTotal: raw.meta.total });
           const seen = new Set<string>();
           for (const r of raw.results) {
-            const core = (r as { core_project_num?: string }).core_project_num ?? String(r.appl_id);
+            const core = r.core_project_num ?? String(r.appl_id);
             if (seen.has(core)) continue;
             seen.add(core);
             const p = parseNihProject(r);

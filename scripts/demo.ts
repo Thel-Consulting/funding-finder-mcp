@@ -2,7 +2,7 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 
-const url = process.argv[2] ?? process.env.MCP_URL ?? "http://localhost:8888/mcp";
+const url = process.argv[2] ?? process.env.MCP_URL ?? "https://grants.thelconsulting.com/mcp";
 
 const prompts = [
   { prompt: "NIH SBIR awards to South Dakota companies since 2020", tool: "search_nih_awards", args: { org_states: ["SD"], fiscal_year_from: 2020, limit: 50 } },

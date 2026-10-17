@@ -1,0 +1,11 @@
+name: Feature request
+description: A new filter, tool or data source
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you want to do
+      description: The question you want answered and which data source has the answer, if you know.
+    validations:
+      required: true

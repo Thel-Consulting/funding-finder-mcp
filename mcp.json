@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "funding-finder": {
-      "url": "https://federal-funding-finder.netlify.app/mcp"
+      "url": "https://grants.thelconsulting.com/mcp"
     }
   }
 }

@@ -13,6 +13,11 @@ export class UpstreamError extends Error {
     super(`${source} request failed${status ? ` (HTTP ${status})` : ""}: ${message}. URL: ${url}`);
     this.name = "UpstreamError";
   }
+
+  // 4xx means the upstream rejected this request, not that it is down.
+  get isClientError() {
+    return this.status !== undefined && this.status >= 400 && this.status < 500;
+  }
 }
 
 export class MemoryCache implements Cache {
@@ -44,19 +49,46 @@ export interface FetchOptions {
   timeoutMs?: number;
   cache?: Cache;
   ttlSeconds?: number;
+  // Reduces an upstream response to the fields the tools use, dropping
+  // anything that echoes the request (search terms, saved-search links) and
+  // personal fields. Return undefined to skip caching. Without it, nothing
+  // is cached.
+  sanitize?: (data: unknown) => unknown;
 }
 
-async function sha256(text: string) {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
-  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+// Cache keys are an HMAC of the upstream request, so key names never contain
+// query text and cannot be confirmed by hashing a guessed query. The secret
+// comes from the CACHE_KEY_SALT environment variable (set on Netlify, never in
+// the repo). Without it each process uses a random secret, which is safe but
+// means entries are not shared between function instances.
+let hmacKey: Promise<CryptoKey> | undefined;
+function cacheHmacKey() {
+  hmacKey ??= (async () => {
+    const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env;
+    const secret = env?.CACHE_KEY_SALT || crypto.randomUUID() + crypto.randomUUID();
+    return crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  })();
+  return hmacKey;
+}
+
+export const CACHE_KEY_PREFIX = "v2:";
+
+export async function cacheKey(text: string) {
+  const sig = await crypto.subtle.sign("HMAC", await cacheHmacKey(), new TextEncoder().encode(text));
+  return CACHE_KEY_PREFIX + [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+export function resetCacheKeyForTests() {
+  hmacKey = undefined;
 }
 
 const USER_AGENT = "funding-finder-mcp/0.1 (open source, Thel Consulting)";
 
 export async function fetchJson<T>(opts: FetchOptions): Promise<T> {
-  const { source, url, method = "GET", body, timeoutMs = 25000, cache, ttlSeconds = 3600 } = opts;
+  const { source, url, method = "GET", body, timeoutMs = 25000, ttlSeconds = 3600, sanitize } = opts;
+  const cache = sanitize ? opts.cache : undefined;
   const payload = body === undefined ? undefined : JSON.stringify(body);
-  const key = cache ? `v1:${await sha256(`${method} ${url} ${payload ?? ""}`)}` : "";
+  const key = cache ? await cacheKey(`${method} ${url} ${payload ?? ""}`) : "";
   if (cache) {
     try {
       const hit = await cache.get(key);
@@ -83,18 +115,19 @@ export async function fetchJson<T>(opts: FetchOptions): Promise<T> {
   }
   const text = await res.text();
   if (!res.ok) throw new UpstreamError(source, url, text.slice(0, 200) || res.statusText, res.status);
-  let data: T;
+  let data: unknown;
   try {
-    data = JSON.parse(text) as T;
+    data = JSON.parse(text);
   } catch {
     throw new UpstreamError(source, url, "response was not valid JSON", res.status);
   }
-  if (cache) {
+  const clean = sanitize ? sanitize(data) : undefined;
+  if (cache && clean !== undefined) {
     try {
-      await cache.put(key, text, ttlSeconds);
+      await cache.put(key, JSON.stringify(clean), ttlSeconds);
     } catch {
       // cache write failures are non-fatal
     }
   }
-  return data;
+  return (clean ?? data) as T;
 }
