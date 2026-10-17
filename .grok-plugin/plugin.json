@@ -18,5 +18,6 @@
     "funding",
     "mcp"
   ],
-  "mcpServers": "mcp.json"
+  "mcpServers": "mcp.json",
+  "logo": "assets/logo.svg"
 }

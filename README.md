@@ -1,4 +1,4 @@
-<p><img src="assets/logo.svg" alt="" width="64" height="64"></p>
+<p><img src="assets/logo.svg" alt="Federal Funding Finder logo" width="64" height="64"></p>
 
 # Federal Funding Finder
 
@@ -106,7 +106,7 @@ This project is not affiliated with or endorsed by any federal agency.
 
 ## Design
 
-Visuals follow the [Quartz design system](https://github.com/arla6ka/skills/tree/main/systems/quartz) by Arlan Marat (MIT). [docs/vendor/quartz/tokens.css](docs/vendor/quartz/tokens.css) is an unchanged copy with its license. Token notes are in [design/quartz-tokens.md](design/quartz-tokens.md). The logo is a draft pending approval.
+Visuals follow the [Quartz design system](https://github.com/arla6ka/skills/tree/main/systems/quartz) by Arlan Marat (MIT). [docs/vendor/quartz/tokens.css](docs/vendor/quartz/tokens.css) is an unchanged copy with its license. Token notes are in [design/quartz-tokens.md](design/quartz-tokens.md).
 
 ## License
 
