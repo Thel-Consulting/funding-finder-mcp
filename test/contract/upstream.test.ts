@@ -109,5 +109,18 @@ describe("contract: tools end to end", () => {
     expect(nsf.res.isError).toBeFalsy();
     expect(nsf.data.recordsAggregated).toBeGreaterThan(0);
     expect(nsf.data.source.queryUrl).toMatch(/^https:\/\//);
+    expect(nsf.data.partial).toBe(false);
+  });
+
+  it("NSF summary counts only company awards (FY2026 has the UCF institute and QEM outreach awards)", async () => {
+    const { res, data } = await call("agency_sbir_summary", { agency: "NSF", fiscal_year_from: 2026, fiscal_year_to: 2026 });
+    expect(res.isError).toBeFalsy();
+    const orgs = data.topOrganizations.map((o: { key: string }) => o.key);
+    expect(orgs).not.toContain("The University of Central Florida Board of Trustees");
+    expect(orgs).not.toContain("QEM Network HQ");
+    const excluded = data.excludedNonCompany.byProgram.map((p: { key: string }) => p.key);
+    expect(excluded).toContain("SBIR Commercialization");
+    expect(excluded).toContain("SBIR Outreach & Tech. Assist");
+    for (const y of data.byFiscalYear) if (y.status !== "not aggregated") expect(y.count + y.excluded).toBeLessThanOrEqual(y.fetched);
   });
 });

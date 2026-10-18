@@ -249,14 +249,14 @@ export function registerTools(server: McpServer, cache?: Cache) {
     {
       title: "Search NSF awards (NSF Award Search API)",
       description:
-        "Read-only. Searches NSF awards through the NSF Award Search API on Research.gov. Defaults to SBIR/STTR awards " +
-        "(fundProgramName 'SBIR OR STTR'). Multi-word keywords are ORed by NSF; use AND between words to require all. Every result links to NSF.",
+        "Read-only. Searches NSF awards through the NSF Award Search API on Research.gov. Defaults to SBIR/STTR Phase I, Phase II and Fast-Track company awards: " +
+        "it queries fundProgramName 'SBIR OR STTR' and drops outreach, operations and other awards whose program names only mention SBIR or STTR. Multi-word keywords are ORed by NSF; use AND between words to require all. Every result links to NSF.",
       inputSchema: strict({
         keyword: z.string().max(300).optional().describe("Free text; supports AND, OR, NOT and quoted phrases"),
         state: stateCode.optional().describe("Awardee state, for example SD"),
         award_date_from: isoDate.optional().describe("Earliest award date, YYYY-MM-DD"),
         award_date_to: isoDate.optional().describe("Latest award date, YYYY-MM-DD"),
-        sbir_sttr_only: z.boolean().default(true),
+        sbir_sttr_only: z.boolean().default(true).describe("Only SBIR/STTR Phase I, Phase II and Fast-Track company awards"),
         rows: z.number().int().min(1).max(25).default(10),
         offset: z.number().int().min(0).max(2999).default(0),
         include_abstract: z.boolean().default(false),
@@ -279,12 +279,21 @@ export function registerTools(server: McpServer, cache?: Cache) {
           cache,
         );
         const total$ = res.awards.reduce((s, a) => s + (a.fundsObligated ?? 0), 0);
+        const nextOffset = input.offset + res.pageSize < res.total ? input.offset + res.pageSize : null;
+        const excludedNote = res.excluded.length
+          ? ` Excluded ${res.excluded.length} non-company award${res.excluded.length === 1 ? "" : "s"} on this page (${[...new Set(res.excluded.map((a) => a.program))].join("; ")}).`
+          : "";
         return ok(
-          `NSF returned ${res.total} matching awards; showing ${res.awards.length} (obligated on this page: $${total$.toLocaleString("en-US")}).`,
+          `NSF returned ${res.total} matching awards; showing ${res.awards.length} (obligated on this page: $${total$.toLocaleString("en-US")}).${excludedNote}`,
           {
             source: { name: "NSF Award Search API", queryUrl: res.queryUrl, docs: NSF_DOCS_URL },
             total: res.total,
             offset: input.offset,
+            next_offset: nextOffset,
+            excludedNonCompany: res.excluded.length ? res.excluded.map((a) => ({ id: a.id, title: a.title, organization: a.organization, program: a.program })) : undefined,
+            note: input.sbir_sttr_only
+              ? "total is NSF's count for fundProgramName 'SBIR OR STTR', which also includes non-company program awards; those are dropped from results. Use next_offset to continue."
+              : undefined,
             results: res.awards,
           },
         );
@@ -391,8 +400,8 @@ export function registerTools(server: McpServer, cache?: Cache) {
       title: "Summarize SBIR/STTR awards by year and state",
       description:
         "Read-only. Aggregates SBIR/STTR award counts and dollar totals by fiscal year (and by state when no state is given) " +
-        "from NIH RePORTER (activity codes R43, R44, R41, R42) or NSF Award Search (fundProgramName SBIR OR STTR). " +
-        "Finishes within about 7 seconds: pulls at most 2,000 NIH records or 600 NSF awards and marks the result partial, with a note, when the upstream total is larger.",
+        "from NIH RePORTER (activity codes R43, R44, R41, R42) or NSF Award Search (SBIR/STTR Phase I, Phase II and Fast-Track company awards). " +
+        "Finishes within about 7 seconds. When there are too many records it samples (NSF: newest awards of each fiscal year) and marks each year complete, partial or not aggregated.",
       inputSchema: strict({
         agency: z.enum(["NIH", "NSF"]),
         state: stateCode.optional(),
@@ -414,9 +423,19 @@ export function registerTools(server: McpServer, cache?: Cache) {
           input.agency === "NIH"
             ? await summarizeNih({ state: input.state, from, to, keyword: input.keyword }, cache)
             : await summarizeNsf({ state: input.state, from, to, keyword: input.keyword }, cache);
-        const s = summary as { recordsAggregated: number; upstreamTotal: number; totalAmount: number; partial: boolean };
+        const s = summary as {
+          recordsAggregated: number;
+          upstreamTotal: number;
+          totalAmount: number;
+          partial: boolean;
+          byFiscalYear: { key: string; status: string; upstreamCount: number | null }[];
+          excludedNonCompany?: { count: number };
+        };
+        const incomplete = s.byFiscalYear.filter((y) => y.status !== "complete").map((y) => `FY${y.key} ${y.status}`);
+        const excluded = s.excludedNonCompany?.count ? ` Excluded ${s.excludedNonCompany.count} non-company program awards.` : "";
         return ok(
-          `${input.agency} SBIR/STTR, FY${from} to FY${to}${input.state ? `, ${input.state}` : ""}: ${s.recordsAggregated} records, $${s.totalAmount.toLocaleString("en-US")}${s.partial ? ` (partial: ${s.recordsAggregated} of ${s.upstreamTotal} upstream records)` : ""}.`,
+          `${input.agency} SBIR/STTR, FY${from} to FY${to}${input.state ? `, ${input.state}` : ""}: ${s.recordsAggregated} records, $${s.totalAmount.toLocaleString("en-US")}` +
+            `${s.partial ? ` (partial, ${s.upstreamTotal} upstream records: ${incomplete.join(", ")}; see partialNote)` : ""}.${excluded}`,
           summary as unknown as Json,
         );
       }),

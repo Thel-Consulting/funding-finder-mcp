@@ -1,10 +1,13 @@
 import type { Cache } from "./sources/http.js";
 import { NIH_DOCS_URL, NIH_SEARCH_URL, SBIR_STTR_ACTIVITY_CODES, searchNihRaw, type RawNihProject } from "./sources/nih.js";
-import { NSF_DOCS_URL, NSF_MAX_RPP, searchNsf } from "./sources/nsf.js";
+import { NSF_DOCS_URL, NSF_MAX_RPP, NSF_SBIR_STTR_PROGRAMS, searchNsf } from "./sources/nsf.js";
 
 export const NIH_PAGE = 500;
 export const NIH_MAX_PAGES = 4;
-export const NSF_MAX_PAGES = 24;
+// NSF: page through everything when it fits in NSF_FULL_PAGES, otherwise sample
+// each fiscal year within NSF_MAX_PAGES. TIME_BUDGET_MS stops either earlier.
+export const NSF_FULL_PAGES = 24;
+export const NSF_MAX_PAGES = 40;
 export const NSF_CONCURRENCY = 8;
 export const TIME_BUDGET_MS = 6500;
 
@@ -36,12 +39,17 @@ async function inBatches<T>(items: T[], size: number, fn: (item: T) => Promise<v
   for (let i = 0; i < items.length; i += size) await Promise.allSettled(items.slice(i, i + size).map(fn));
 }
 
-function withUpstreamCounts(rows: { key: string; count: number; amount: number }[], counts: Map<number, number>) {
-  if (!counts.size) return rows;
+// Per-year rows with a status. When the fetch was partial, a year whose fetched
+// count is below NIH's own count is a sample ("partial"), and a year with no
+// fetched records is "not aggregated" (null, not 0).
+export function nihYearRows(rows: { key: string; count: number; amount: number }[], counts: Map<number, number>, partial: boolean) {
+  if (!partial) return rows.map((r) => ({ ...r, status: "complete" as YearStatus, upstreamCount: r.count }));
   const keys = new Set([...rows.map((r) => r.key), ...[...counts.keys()].map(String)]);
   return [...keys].sort().map((key) => {
     const r = rows.find((x) => x.key === key) ?? { key, count: 0, amount: 0 };
-    return { ...r, upstreamCount: counts.get(Number(key)) ?? null };
+    const up = counts.get(Number(key)) ?? null;
+    const status: YearStatus = up !== null && r.count >= up ? "complete" : r.count > 0 ? "partial" : "not aggregated";
+    return status === "not aggregated" ? { key, count: null, amount: null, status, upstreamCount: up } : { ...r, status, upstreamCount: up };
   });
 }
 
@@ -119,10 +127,10 @@ export async function summarizeNih(p: SummaryInput, cache?: Cache) {
     recordsAggregated: rows.length,
     partial,
     partialNote: partial
-      ? `Partial: aggregated ${rows.length} of ${upstreamTotal} records (stopped by ${stoppedBy ?? "page cap"}). Dollar totals and breakdowns cover only the aggregated records; byFiscalYear[].upstreamCount is the exact NIH count per year. Narrow the year range or add a state for complete totals.`
+      ? `Partial: aggregated ${rows.length} of ${upstreamTotal} records (stopped by ${stoppedBy ?? "page cap"}). Years with status "partial" are a sample, so their count and amount are lower bounds; upstreamCount is NIH's exact count per year. Totals and breakdowns cover only the aggregated records. Narrow the year range or add a state for complete totals.`
       : undefined,
     ...agg,
-    byFiscalYear: withUpstreamCounts(agg.byFiscalYear, yearCounts),
+    byFiscalYear: nihYearRows(agg.byFiscalYear, yearCounts, partial),
   };
 }
 
@@ -132,87 +140,191 @@ export function fiscalYearOf(isoDate: string | null) {
   return m >= 10 ? y + 1 : y;
 }
 
+export type YearStatus = "complete" | "partial" | "not aggregated";
+
+export interface NsfYearRow {
+  key: string;
+  status: YearStatus;
+  count: number | null;
+  amount: number | null;
+  excluded: number | null;
+  fetched: number;
+  upstreamCount: number | null;
+}
+
+interface NsfYear {
+  fy: number;
+  total: number | null;
+  fetched: number;
+  count: number;
+  amount: number;
+  excluded: number;
+}
+
+// Page 1 of every year, then page 2 of every year, and so on, so each year gets
+// its newest awards before any year gets more. Page 0 is fetched separately.
+export function planYearPages(years: { fy: number; pagesNeeded: number }[], budget: number) {
+  const plan: { fy: number; page: number }[] = [];
+  const maxPages = Math.max(0, ...years.map((y) => y.pagesNeeded));
+  for (let page = 1; page < maxPages && plan.length < budget; page++) {
+    for (const y of years) if (page < y.pagesNeeded && plan.length < budget) plan.push({ fy: y.fy, page });
+  }
+  return plan;
+}
+
+export function nsfYearRow(y: NsfYear, complete?: boolean): NsfYearRow {
+  const status: YearStatus =
+    complete ?? (y.total !== null && y.fetched >= y.total) ? "complete" : y.fetched > 0 ? "partial" : "not aggregated";
+  const counted = status !== "not aggregated";
+  return {
+    key: String(y.fy),
+    status,
+    count: counted ? y.count : null,
+    amount: counted ? Math.round(y.amount) : null,
+    excluded: counted ? y.excluded : null,
+    fetched: y.fetched,
+    upstreamCount: y.total ?? (status === "complete" ? y.count + y.excluded : null),
+  };
+}
+
 export async function summarizeNsf(p: SummaryInput, cache?: Cache) {
   const deadline = Date.now() + TIME_BUDGET_MS;
-  const byYear = new Map<string, Bucket>();
   const byState = new Map<string, Bucket>();
   const byProgram = new Map<string, Bucket>();
   const byOrg = new Map<string, Bucket>();
-  let total = 0;
-  let aggregated = 0;
+  const excludedByProgram = new Map<string, Bucket>();
+  const fiscalYears = Array.from({ length: p.to - p.from + 1 }, (_, i) => p.to - i);
+  const years = new Map<number, NsfYear>(fiscalYears.map((fy) => [fy, { fy, total: null, fetched: 0, count: 0, amount: 0, excluded: 0 }]));
   let failedPages = 0;
-  const params = {
-    keyword: p.keyword,
-    state: p.state,
-    sbirSttrOnly: true,
-    awardDateFrom: `${p.from - 1}-10-01`,
-    awardDateTo: `${p.to}-09-30`,
-    rpp: NSF_MAX_RPP,
-  };
-  const take = (awards: Awaited<ReturnType<typeof searchNsf>>["awards"]) => {
-    for (const a of awards) {
+  let stoppedByTime = false;
+  const base = { keyword: p.keyword, state: p.state, sbirSttrOnly: true, rpp: NSF_MAX_RPP };
+  const yearRange = (from: number, to: number) => ({ awardDateFrom: `${from - 1}-10-01`, awardDateTo: `${to}-09-30` });
+
+  type Page = Awaited<ReturnType<typeof searchNsf>>;
+  const take = (r: Page) => {
+    for (const a of r.awards) {
+      const y = years.get(fiscalYearOf(a.awardDate) ?? 0);
+      if (!y) continue;
       const amt = a.fundsObligated ?? 0;
-      total += amt;
-      aggregated++;
-      add(byYear, String(fiscalYearOf(a.awardDate) ?? "unknown"), amt);
+      y.count++;
+      y.amount += amt;
       add(byProgram, a.program ?? "unknown", amt);
       add(byOrg, a.organization ?? "unknown", amt);
       if (!p.state) add(byState, a.state ?? "unknown", amt);
     }
+    for (const a of r.excluded) {
+      const y = years.get(fiscalYearOf(a.awardDate) ?? 0);
+      if (y) y.excluded++;
+      add(excludedByProgram, a.program ?? "unknown", a.fundsObligated ?? 0);
+    }
+  };
+  // Runs page requests NSF_CONCURRENCY at a time until done or out of time.
+  const runPages = async (jobs: { params: Record<string, unknown>; onPage: (r: Page) => void }[]) => {
+    for (let i = 0; i < jobs.length; i += NSF_CONCURRENCY) {
+      const remaining = deadline - Date.now();
+      if (remaining < 1500) {
+        stoppedByTime = true;
+        return;
+      }
+      const batch = jobs.slice(i, i + NSF_CONCURRENCY);
+      const results = await Promise.allSettled(batch.map((j) => searchNsf({ ...base, ...j.params, timeoutMs: remaining - 500, fallback: false }, cache)));
+      results.forEach((r, k) => {
+        if (r.status === "fulfilled") batch[k].onPage(r.value);
+        else failedPages++;
+      });
+    }
   };
 
-  const first = await searchNsf({ ...params, offset: 0, timeoutMs: TIME_BUDGET_MS - 1000 }, cache);
+  const first = await searchNsf({ ...base, ...yearRange(p.from, p.to), offset: 0, timeoutMs: TIME_BUDGET_MS - 1000 }, cache);
   const upstreamTotal = first.total;
-  take(first.awards);
   const pagesNeeded = Math.ceil(upstreamTotal / NSF_MAX_RPP);
-  const pages = Array.from({ length: Math.min(pagesNeeded, NSF_MAX_PAGES) - 1 }, (_, i) => i + 1);
-  const yearCounts = new Map<number, number>();
-  const years = Array.from({ length: p.to - p.from + 1 }, (_, i) => p.from + i);
-  const countsTask =
-    pagesNeeded > NSF_MAX_PAGES
-      ? inBatches(years, 8, async (fy) => {
-          const r = await searchNsf(
-            { ...params, awardDateFrom: `${fy - 1}-10-01`, awardDateTo: `${fy}-09-30`, rpp: 1, offset: 0, timeoutMs: Math.max(1000, deadline - Date.now() - 500), fallback: false },
-            cache,
-          );
-          yearCounts.set(fy, r.total);
-        })
-      : Promise.resolve();
-  for (let i = 0; i < pages.length; i += NSF_CONCURRENCY) {
-    const remaining = deadline - Date.now();
-    if (remaining < 1500) break;
-    const batch = pages.slice(i, i + NSF_CONCURRENCY);
-    const results = await Promise.allSettled(
-      batch.map((page) => searchNsf({ ...params, offset: page * NSF_MAX_RPP, timeoutMs: remaining - 500, fallback: false }, cache)),
+  const sampled = pagesNeeded > NSF_FULL_PAGES;
+  let rows: NsfYearRow[];
+
+  if (!sampled) {
+    // Small enough to fetch everything.
+    take(first);
+    let fetched = first.pageSize;
+    await runPages(
+      Array.from({ length: Math.max(0, pagesNeeded - 1) }, (_, i) => ({
+        params: { ...yearRange(p.from, p.to), offset: (i + 1) * NSF_MAX_RPP },
+        onPage: (r: Page) => {
+          take(r);
+          fetched += r.pageSize;
+        },
+      })),
     );
-    for (const r of results) {
-      if (r.status === "fulfilled") take(r.value.awards);
-      else failedPages++;
-    }
+    const complete = fetched >= upstreamTotal;
+    rows = [...years.values()].map((y) => {
+      if (complete) return nsfYearRow({ ...y, total: y.count + y.excluded, fetched: y.count + y.excluded }, true);
+      return nsfYearRow({ ...y, fetched: y.count + y.excluded }, false);
+    });
+  } else {
+    // Too many awards to fetch in time: sample each fiscal year, newest awards first.
+    await runPages(
+      fiscalYears.map((fy) => ({
+        params: { ...yearRange(fy, fy), offset: 0 },
+        onPage: (r: Page) => {
+          const y = years.get(fy)!;
+          y.total = r.total;
+          y.fetched += r.pageSize;
+          take(r);
+        },
+      })),
+    );
+    const plan = planYearPages(
+      [...years.values()].filter((y) => y.total !== null).map((y) => ({ fy: y.fy, pagesNeeded: Math.ceil(y.total! / NSF_MAX_RPP) })),
+      NSF_MAX_PAGES - fiscalYears.length,
+    );
+    await runPages(
+      plan.map(({ fy, page }) => ({
+        params: { ...yearRange(fy, fy), offset: page * NSF_MAX_RPP },
+        onPage: (r: Page) => {
+          years.get(fy)!.fetched += r.pageSize;
+          take(r);
+        },
+      })),
+    );
+    rows = [...years.values()].map((y) => nsfYearRow(y));
   }
-  await countsTask;
-  const partial = aggregated < upstreamTotal;
+
+  rows.sort((a, b) => a.key.localeCompare(b.key));
+  const counted = rows.filter((r) => r.status !== "not aggregated");
+  const total = counted.reduce((s, r) => s + (r.amount ?? 0), 0);
+  const aggregated = counted.reduce((s, r) => s + (r.count ?? 0), 0);
+  const excluded = counted.reduce((s, r) => s + (r.excluded ?? 0), 0);
+  const incomplete = rows.filter((r) => r.status !== "complete");
+  const partial = incomplete.length > 0;
   const reasons = [
-    pagesNeeded > NSF_MAX_PAGES ? `page cap (${NSF_MAX_PAGES} pages of ${NSF_MAX_RPP})` : null,
+    sampled ? `${upstreamTotal} awards is more than ${NSF_FULL_PAGES * NSF_MAX_RPP}, so each fiscal year was sampled newest first (${NSF_MAX_PAGES} page budget)` : null,
+    stoppedByTime ? "time budget reached" : null,
     failedPages ? `${failedPages} page requests failed or timed out` : null,
-    partial && pagesNeeded <= NSF_MAX_PAGES && !failedPages ? "time budget" : null,
   ].filter(Boolean);
   return {
     agency: "NSF",
     source: { name: "NSF Award Search API", queryUrl: first.queryUrl, docs: NSF_DOCS_URL },
-    filters: { fundProgramName: "SBIR OR STTR", state: p.state ?? null, fiscalYears: `${p.from}-${p.to}`, keyword: p.keyword ?? null },
+    filters: {
+      fundProgramName: "SBIR OR STTR",
+      companyAwardPrograms: [...NSF_SBIR_STTR_PROGRAMS],
+      state: p.state ?? null,
+      fiscalYears: `${p.from}-${p.to}`,
+      keyword: p.keyword ?? null,
+    },
     notes:
+      "Counts only SBIR/STTR Phase I, Phase II and Fast-Track company awards (a phase program component plus, from FY1997, a title naming the phase). NSF's fundProgramName search also returns outreach, operations, research center, I-Corps and fellowship awards that mention or were co-funded by SBIR/STTR; those are excluded and reported under excludedNonCompany. " +
       "Fiscal year is derived from the NSF award date (October starts the next fiscal year). Amounts are total funds obligated to each award to date.",
     upstreamTotal,
     recordsAggregated: aggregated,
     partial,
     partialNote: partial
-      ? `Partial: aggregated ${aggregated} of ${upstreamTotal} awards, newest first (${reasons.join("; ")}). Dollar totals and breakdowns cover only the aggregated awards; byFiscalYear[].upstreamCount is the exact NSF count per year. Narrow the year range or add a state for complete totals.`
+      ? `Partial (${reasons.join("; ") || "incomplete fetch"}). Years with status "partial" count only the awards fetched for that year, so their count and amount are lower bounds; years with status "not aggregated" were not fetched and show null. upstreamCount is NSF's exact count per year before excluding non-company awards. Totals and breakdowns cover only fetched awards. Narrow the year range or add a state for complete totals.`
       : undefined,
     totalAmount: Math.round(total),
-    byFiscalYear: withUpstreamCounts(toObj(byYear), yearCounts),
+    byFiscalYear: rows,
+    excludedNonCompany: { count: excluded, byProgram: toObj(excludedByProgram, "amount") },
     byProgram: toObj(byProgram, "amount"),
     byState: p.state ? undefined : toObj(byState, "amount"),
     topOrganizations: toObj(byOrg, "amount", 10),
+    incompleteYears: incomplete.map((r) => r.key),
   };
 }

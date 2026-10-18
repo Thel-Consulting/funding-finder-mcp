@@ -38,7 +38,15 @@ for (const p of prompts) {
       const amount = r.awardAmount ?? r.fundsObligated;
       console.log(`  - ${r.title} | ${r.organization ?? r.agency ?? ""} | ${amount != null ? `$${Number(amount).toLocaleString("en-US")}` : r.closeDate ? `closes ${r.closeDate}` : r.status ?? ""} | ${r.url}`);
     }
-    if (data.byFiscalYear) console.log(`  by fiscal year: ${data.byFiscalYear.map((b: { key: string; count: number; amount: number; upstreamCount?: number | null }) => `${b.key}: ${b.count}${b.upstreamCount != null ? ` (of ${b.upstreamCount})` : ""} / $${b.amount.toLocaleString("en-US")}`).join("; ")}`);
+    if (data.byFiscalYear) {
+      type Year = { key: string; count: number | null; amount: number | null; status?: string; upstreamCount?: number | null };
+      const fmt = (b: Year) =>
+        b.status === "not aggregated"
+          ? `${b.key}: not aggregated (${b.upstreamCount ?? "?"} upstream)`
+          : `${b.key}: ${b.count}${b.status === "partial" ? ` (sample; ${b.upstreamCount ?? "?"} upstream)` : ""} / $${(b.amount ?? 0).toLocaleString("en-US")}`;
+      console.log(`  by fiscal year: ${data.byFiscalYear.map(fmt).join("; ")}`);
+    }
+    if (data.excludedNonCompany?.count) console.log(`  excluded non-company awards: ${data.excludedNonCompany.count} (${data.excludedNonCompany.byProgram.map((p: { key: string; count: number }) => `${p.key}: ${p.count}`).join("; ")})`);
     if (data.partialNote) console.log(`  ${data.partialNote}`);
     if (data.topOrganizations) console.log(`  top orgs: ${data.topOrganizations.slice(0, 3).map((o: { key: string; amount: number }) => `${o.key} ($${o.amount.toLocaleString("en-US")})`).join("; ")}`);
   } else if (res.isError) {

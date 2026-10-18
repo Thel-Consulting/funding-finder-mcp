@@ -59,6 +59,38 @@ export interface NsfAward {
   url: string;
 }
 
+// NSF's fundProgramName filter is a word match, so "SBIR OR STTR" also returns
+// awards from programs that only mention SBIR or STTR in their name (outreach
+// and technical assistance, SBIR/STTR operations, the commercialization
+// institute) and multi-program awards that SBIR/STTR money co-funded (research
+// centers, I-Corps, fellowships, conferences). A company award has a Phase I,
+// Phase II or Fast-Track program component, and:
+// - from FY1997 (award date 1996-10-01) on, a title that starts with the phase,
+//   which NSF uses for every company award ("SBIR Phase I: ...");
+// - before that, when titles did not name the phase, no program component
+//   other than SBIR/STTR programs and EPSCoR co-funding.
+export const NSF_SBIR_STTR_PROGRAMS = new Set([
+  "SBIR Phase I",
+  "SBIR Phase II",
+  "STTR Phase I",
+  "STTR Phase II",
+  "SBIR Fast-Track",
+  "STTR Fast-Track",
+]);
+const PRE_FY1997_ALLOWED = new Set([...NSF_SBIR_STTR_PROGRAMS, "SBIR/STTR Operations", "EPSCoR Co-Funding"]);
+const PHASE_TITLE = /^\s*((SBIR|STTR)(\s*\/\s*(SBIR|STTR))?[\s/:]*)?(Phase\s*(I{1,2}B?|1|2)|Fast[- ]?Track)\b/i;
+const PHASE_TITLE_FROM = "1996-10-01";
+
+export function isSbirSttrCompanyAward(a: { program?: string | null; title?: string | null; awardDate?: string | null }) {
+  const parts = (a.program ?? "")
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (!parts.some((p) => NSF_SBIR_STTR_PROGRAMS.has(p))) return false;
+  if (PHASE_TITLE.test(a.title ?? "")) return true;
+  return !!a.awardDate && a.awardDate < PHASE_TITLE_FROM && parts.every((p) => PRE_FY1997_ALLOWED.has(p));
+}
+
 export function isoToNsfDate(iso: string) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
   if (!m) throw new Error(`Invalid date "${iso}", expected YYYY-MM-DD`);
@@ -166,7 +198,11 @@ export async function searchNsf(p: NsfSearchParams & { includeAbstract?: boolean
         timeoutMs: p.timeoutMs ?? 8000,
         sanitize: sanitizeNsfResponse,
       });
-      return { ...parseNsfResponse(raw, p.includeAbstract), queryUrl: url };
+      const parsed = parseNsfResponse(raw, p.includeAbstract);
+      const filter = p.sbirSttrOnly && !p.fundProgramName;
+      const awards = filter ? parsed.awards.filter((a) => isSbirSttrCompanyAward(a)) : parsed.awards;
+      const excluded = filter ? parsed.awards.filter((a) => !isSbirSttrCompanyAward(a)) : [];
+      return { total: parsed.total, awards, excluded, pageSize: parsed.awards.length, queryUrl: url };
     } catch (err) {
       lastErr = err;
       if (err instanceof UpstreamError && err.status && err.status < 500) throw err;
